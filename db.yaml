@@ -1,0 +1,24 @@
+templates: {}
+api_routers:
+  ':':
+    key: ':'
+    name: ''
+    method: ''
+    path: ''
+    code: 1
+    script: ''
+    header_script: ''
+    code_script: ''
+    is_html: false
+    template: ''
+  GET:/test:
+    key: GET:/test
+    name: ''
+    method: GET
+    path: /test
+    code: 1
+    script: ''
+    header_script: ''
+    code_script: ''
+    is_html: false
+    template: ''
