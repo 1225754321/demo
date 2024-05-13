@@ -1,7 +1,6 @@
-use deno_core::stats;
 use router::Manger;
 use salvo::{
-    http::{header, mime},
+    http::{mime, HeaderName},
     prelude::*,
 };
 use serde::{Deserialize, Serialize};
@@ -110,28 +109,51 @@ async fn manger_run(req: &mut Request, resp: &mut Response) -> String {
             .map(|(k, v)| (k.to_string(), v.clone()))
             .collect(),
     };
-
+    let mut run_js_data = Option::None;
     if !router_node.script.is_empty() {
-        let script_data = js::run_js(router_node.script);
+        let run_js_script = format!(
+            "req={};{}",
+            serde_json::to_string(&req_info).unwrap(),
+            router_node.script
+        );
+        println!("run_js_script.script => {}\n", &run_js_script);
+        run_js_data = Some(js::run_js(run_js_script));
+        println!("run_js_script.script.data => {:?}\n", &run_js_data);
     }
 
+    // 设置code
     if !router_node.code_script.is_empty() {
-        let script_data = js::run_js(router_node.code_script);
+        let run_js_script = format!(
+            "req={};{}",
+            serde_json::to_string(&req_info).unwrap(),
+            router_node.code_script
+        );
+        println!("run_js_script.code => {}\n", &run_js_script);
+        let script_data = js::run_js(run_js_script);
+        println!("run_js_script.code.data => {}\n", script_data);
         let code = script_data.as_i64().unwrap();
         let code = StatusCode::from_u16(code as u16).unwrap();
         resp.status_code(code);
     }
 
+    // 设置headers
     if !router_node.header_script.is_empty() {
-        let script_data = js::run_js(router_node.header_script);
+        let run_js_script = format!(
+            "req={};{}",
+            serde_json::to_string(&req_info).unwrap(),
+            router_node.header_script
+        );
+        println!("run_js_script.header => {}\n", &run_js_script);
+        let script_data = js::run_js(run_js_script);
+        println!("run_js_script.header.data => {}\n", script_data);
         if !script_data.is_null() {
             if script_data.is_object() {
-                let object = script_data.as_object().unwrap();
-                for (k, v) in object {
-                    let var_name = v.as_str().unwrap();
-                    resp.headers
-                        .insert(k.clone().parse().unwrap(), var_name.parse().unwrap())
-                        .unwrap();
+                for (k, v) in script_data.as_object().unwrap() {
+                    let value = v.as_str().unwrap();
+                    resp.headers.insert(
+                        HeaderName::from_lowercase(k.to_lowercase().as_bytes()).unwrap(),
+                        value.parse().unwrap(),
+                    );
                 }
             } else {
                 resp.status_code(StatusCode::NOT_FOUND);
@@ -140,11 +162,30 @@ async fn manger_run(req: &mut Request, resp: &mut Response) -> String {
         }
     }
 
+    println!("router_node = {:?}\n", router_node);
     if router_node.is_html {
+        {
+            let template;
+            let manger = MANGER.get().unwrap().lock().await;
+            template = manger.get_template(&router_node.name).unwrap();
+            if let Some(data) = &run_js_data {
+                let res = template
+                    .templage_html
+                    .replace("TEMPLAGE_SCRIPT", &serde_json::to_string(data).unwrap());
+                println!("res = {}\n", &res);
+                res
+            } else {
+                println!("res = null\n");
+                template.templage_html.replace("TEMPLAGE_SCRIPT", "")
+            }
+        }
     } else {
+        if let Some(data) = &run_js_data {
+            format!("{}", serde_json::to_string(data).unwrap())
+        } else {
+            "".to_string()
+        }
     }
-
-    format!("{}", serde_json::to_string(&req_info).unwrap())
 }
 
 static MANGER: OnceCell<Mutex<Manger>> = OnceCell::const_new();
@@ -158,18 +199,21 @@ async fn main() {
             Router::with_path("/control")
                 .push(
                     Router::with_path("/api")
+                        .get(get_api)
                         .post(set_api)
                         .delete(del_api)
                         .put(set_api),
                 )
                 .push(
                     Router::with_path("/html")
+                        .get(get_html)
                         .post(set_html)
                         .delete(del_api)
                         .put(set_html),
                 )
                 .push(
                     Router::with_path("/template")
+                        .get(get_templage)
                         .post(set_templage)
                         .delete(del_templage)
                         .put(set_templage),
@@ -179,6 +223,15 @@ async fn main() {
     let acceptor = TcpListener::new("127.0.0.1:8080").bind().await;
     let server = Server::new(acceptor);
     server.serve(router).await;
+}
+
+#[handler]
+async fn get_api() -> String {
+    {
+        let manger = MANGER.get().unwrap().lock().await;
+        let test = manger.get_api(false);
+        format!("{}", serde_json::to_string(&test).unwrap())
+    }
 }
 #[handler]
 async fn set_api(req: &mut Request) {
@@ -197,7 +250,14 @@ async fn del_api(req: &mut Request) {
         manger.del_api(router_node).await;
     }
 }
-
+#[handler]
+async fn get_html() -> String {
+    {
+        let manger = MANGER.get().unwrap().lock().await;
+        let test = manger.get_api(true);
+        format!("{}", serde_json::to_string(&test).unwrap())
+    }
+}
 #[handler]
 async fn set_html(req: &mut Request) {
     let mut router_node: db::RouterNode = req.parse_json().await.unwrap();
@@ -207,7 +267,14 @@ async fn set_html(req: &mut Request) {
         manger.set_api(router_node).await;
     }
 }
-
+#[handler]
+async fn get_templage() -> String {
+    {
+        let manger = MANGER.get().unwrap().lock().await;
+        let test = manger.get_templates();
+        format!("{}", serde_json::to_string(&test).unwrap())
+    }
+}
 #[handler]
 async fn set_templage(req: &mut Request) {
     let template: db::Template = req.parse_json().await.unwrap();

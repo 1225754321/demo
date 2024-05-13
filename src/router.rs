@@ -18,6 +18,12 @@ impl Manger {
     pub async fn set_template(&mut self, template: Template) {
         self.db.set_template(template).await;
     }
+    pub fn get_template(&self, name: &str) -> Option<&Template> {
+        self.db.datas.templates.get(name)
+    }
+    pub fn get_templates(&self) -> Vec<&Template> {
+        self.db.datas.templates.values().into_iter().collect()
+    }
     pub async fn del_api(&mut self, node: RouterNode) {
         self.db.remove_api(&node.key()).await;
     }
@@ -25,6 +31,15 @@ impl Manger {
         self.router_tree
             .store(node.method.clone(), node.path.clone());
         self.db.set_api(node.clone()).await;
+    }
+    pub fn get_api(&self, is_html: bool) -> Vec<&RouterNode> {
+        self.db
+            .datas
+            .api_routers
+            .values()
+            .into_iter()
+            .filter(|ref v| v.is_html == is_html)
+            .collect()
     }
     pub fn query(&self, method: &str, url_path: &str) -> Option<&RouterNode> {
         let node = self.router_tree.query(method, url_path)?;
