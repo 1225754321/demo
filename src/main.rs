@@ -1,4 +1,5 @@
 use router::Manger;
+use salvo::serve_static::StaticDir;
 use salvo::{
     http::{mime, HeaderName},
     prelude::*,
@@ -218,6 +219,13 @@ async fn main() {
                         .delete(del_templage)
                         .put(set_templage),
                 ),
+        )
+        .push(
+            Router::with_path("<**path>").get(
+                StaticDir::new(["static"])
+                    .defaults("index.html")
+                    .auto_list(true),
+            ),
         )
         .push(Router::with_path("<**pahts>").goal(manger_run));
     let acceptor = TcpListener::new("127.0.0.1:8080").bind().await;
