@@ -233,70 +233,146 @@ async fn main() {
     server.serve(router).await;
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct Res<T> {
+    status: i64,
+    msg: String,
+    data: Option<T>,
+}
+
 #[handler]
 async fn get_api() -> String {
     {
         let manger = MANGER.get().unwrap().lock().await;
         let test = manger.get_api(false);
-        format!("{}", serde_json::to_string(&test).unwrap())
+        format!(
+            "{}",
+            serde_json::to_string(&Res {
+                status: 0,
+                msg: "".to_string(),
+                data: Some(&test)
+            })
+            .unwrap()
+        )
     }
 }
 #[handler]
-async fn set_api(req: &mut Request) {
+async fn set_api(req: &mut Request) -> String {
     let mut router_node: db::RouterNode = req.parse_json().await.unwrap();
     {
         let mut manger = MANGER.get().unwrap().lock().await;
         router_node.is_html = false;
         manger.set_api(router_node).await;
     }
+    format!(
+        "{}",
+        serde_json::to_string(&Res::<String> {
+            status: 0,
+            msg: "".to_string(),
+            data: None
+        })
+        .unwrap()
+    )
 }
 #[handler]
-async fn del_api(req: &mut Request) {
+async fn del_api(req: &mut Request) -> String {
     let router_node: db::RouterNode = req.parse_json().await.unwrap();
     {
         let mut manger = MANGER.get().unwrap().lock().await;
         manger.del_api(router_node).await;
     }
+    format!(
+        "{}",
+        serde_json::to_string(&Res::<String> {
+            status: 0,
+            msg: "".to_string(),
+            data: None
+        })
+        .unwrap()
+    )
 }
 #[handler]
 async fn get_html() -> String {
     {
         let manger = MANGER.get().unwrap().lock().await;
         let test = manger.get_api(true);
-        format!("{}", serde_json::to_string(&test).unwrap())
+        format!(
+            "{}",
+            serde_json::to_string(&Res {
+                status: 0,
+                msg: "".to_string(),
+                data: Some(&test)
+            })
+            .unwrap()
+        )
     }
 }
 #[handler]
-async fn set_html(req: &mut Request) {
+async fn set_html(req: &mut Request) -> String {
     let mut router_node: db::RouterNode = req.parse_json().await.unwrap();
     {
         let mut manger = MANGER.get().unwrap().lock().await;
         router_node.is_html = true;
         manger.set_api(router_node).await;
     }
+    format!(
+        "{}",
+        serde_json::to_string(&Res::<String> {
+            status: 0,
+            msg: "".to_string(),
+            data: None
+        })
+        .unwrap()
+    )
 }
 #[handler]
 async fn get_templage() -> String {
     {
         let manger = MANGER.get().unwrap().lock().await;
         let test = manger.get_templates();
-        format!("{}", serde_json::to_string(&test).unwrap())
+        format!(
+            "{}",
+            serde_json::to_string(&Res {
+                status: 0,
+                msg: "".to_string(),
+                data: Some(&test)
+            })
+            .unwrap()
+        )
     }
 }
 #[handler]
-async fn set_templage(req: &mut Request) {
+async fn set_templage(req: &mut Request) -> String {
     let template: db::Template = req.parse_json().await.unwrap();
     {
         let mut manger = MANGER.get().unwrap().lock().await;
         manger.set_template(template).await;
     }
+    format!(
+        "{}",
+        serde_json::to_string(&Res::<String> {
+            status: 0,
+            msg: "".to_string(),
+            data: None
+        })
+        .unwrap()
+    )
 }
 
 #[handler]
-async fn del_templage(req: &mut Request) {
+async fn del_templage(req: &mut Request) -> String {
     let template: db::Template = req.parse_json().await.unwrap();
     {
         let mut manger = MANGER.get().unwrap().lock().await;
         manger.del_template(template).await;
     }
+    format!(
+        "{}",
+        serde_json::to_string(&Res::<String> {
+            status: 0,
+            msg: "".to_string(),
+            data: None
+        })
+        .unwrap()
+    )
 }

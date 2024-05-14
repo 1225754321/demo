@@ -1,9 +1,9 @@
 templates:
-  name2:
-    name: name2
-    templage_html: templage_html
   name3:
     name: name3
+    templage_html: templage_html
+  name2:
+    name: name2
     templage_html: templage_html
 api_routers:
   ':':
