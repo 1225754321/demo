@@ -30,7 +30,8 @@ struct RequestInfo {
 #[handler]
 async fn manger_run(req: &mut Request, resp: &mut Response) {
     if req.uri().path() == "/" {
-        resp.headers.insert(LOCATION, "/static/".parse().unwrap());
+        resp.headers
+            .insert(LOCATION, "/static/api.html".parse().unwrap());
         resp.status_code(StatusCode::FOUND);
         return;
     }
@@ -262,7 +263,7 @@ async fn main() {
         .push(
             Router::with_path("/static/<**path>").get(
                 StaticDir::new(["static"])
-                    .defaults("index.html")
+                    .defaults("api.html")
                     .auto_list(true),
             ),
         )
@@ -279,17 +280,50 @@ struct Res<T> {
     data: Option<T>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct Page<T> {
+    total: usize,
+    items: Vec<T>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct PageQ {
+    page: Option<usize>,
+    #[serde(alias = "perPage")]
+    per_page: Option<usize>,
+    name: Option<String>,
+    path: Option<String>,
+}
+
 #[handler]
-async fn get_api() -> String {
+async fn get_api(req: &mut Request) -> String {
     {
+        let page_q: PageQ = req.parse_queries().unwrap();
+        println!("get_api => {:?}", page_q);
+        let left = (page_q.page.unwrap() - 1) * page_q.per_page.unwrap();
         let manger = MANGER.get().unwrap().lock().await;
         let test = manger.get_api(false);
+        let mut right = left + page_q.per_page.unwrap();
+        if right > test.len() {
+            right = test.len();
+        }
         format!(
             "{}",
             serde_json::to_string(&Res {
                 status: 0,
                 msg: "".to_string(),
-                data: Some(&test)
+                data: Some(Page {
+                    total: test.len(),
+                    items: test[left..right]
+                        .iter()
+                        .filter(|v| {
+                            v.name
+                                .contains(page_q.name.clone().unwrap_or_default().as_str())
+                                && v.path
+                                    .contains(page_q.path.clone().unwrap_or_default().as_str())
+                        })
+                        .collect()
+                })
             })
             .unwrap()
         )
@@ -374,16 +408,34 @@ async fn del_api(req: &mut Request) -> String {
     )
 }
 #[handler]
-async fn get_html() -> String {
+async fn get_html(req: &mut Request) -> String {
     {
+        let page_q: PageQ = req.parse_queries().unwrap();
+        println!("get_html => {:?}", page_q);
+        let left = (page_q.page.unwrap() - 1) * page_q.per_page.unwrap();
         let manger = MANGER.get().unwrap().lock().await;
         let test = manger.get_api(true);
+        let mut right = left + page_q.per_page.unwrap();
+        if right > test.len() {
+            right = test.len();
+        }
         format!(
             "{}",
             serde_json::to_string(&Res {
                 status: 0,
                 msg: "".to_string(),
-                data: Some(&test)
+                data: Some(Page {
+                    total: test.len(),
+                    items: test[left..right]
+                        .iter()
+                        .filter(|v| {
+                            v.name
+                                .contains(page_q.name.clone().unwrap_or_default().as_str())
+                                && v.path
+                                    .contains(page_q.path.clone().unwrap_or_default().as_str())
+                        })
+                        .collect()
+                })
             })
             .unwrap()
         )
@@ -408,16 +460,32 @@ async fn set_html(req: &mut Request) -> String {
     )
 }
 #[handler]
-async fn get_templage() -> String {
+async fn get_templage(req: &mut Request) -> String {
     {
+        let page_q: PageQ = req.parse_queries().unwrap();
+        println!("get_templage => {:?}", page_q);
+        let left = (page_q.page.unwrap() - 1) * page_q.per_page.unwrap();
         let manger = MANGER.get().unwrap().lock().await;
         let test = manger.get_templates();
+        let mut right = left + page_q.per_page.unwrap();
+        if right > test.len() {
+            right = test.len();
+        }
         format!(
             "{}",
             serde_json::to_string(&Res {
                 status: 0,
                 msg: "".to_string(),
-                data: Some(&test)
+                data: Some(Page {
+                    total: test.len(),
+                    items: test[left..right]
+                        .iter()
+                        .filter(|v| {
+                            v.name
+                                .contains(page_q.name.clone().unwrap_or_default().as_str())
+                        })
+                        .collect()
+                })
             })
             .unwrap()
         )

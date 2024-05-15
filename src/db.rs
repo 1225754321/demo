@@ -8,7 +8,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct RouterNode {
-    key: String,
+    pub key: String,
     pub name: String,          // 注册的name,相当于id
     pub method: String,        // 请求方式
     pub path: String,          // 请求路由

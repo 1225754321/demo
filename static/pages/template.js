@@ -58,178 +58,159 @@ var placeholder = `<!DOCTYPE html>
 </html>`
 
 var templateJSON = {
-    "type": "service",
-    "id": "templateJSONData",
-    "data": {
-        "switch": false,
+    "type": "crud",
+    "syncLocation": false,
+    "api": {
+        "method": "get",
+        "url": "/control/template"
     },
-    "body": {
-        "type": "container",
-        "body": [
-            {
-                "name": "switch",
-                "type": "switch",
-                "option": "template配置"
-            },
-            {
-                "type": "crud",
-                "visibleOn": "data.switch",
-                "syncLocation": false,
-                "api": {
-                    "method": "get",
-                    "url": "/control/template"
+    "columns": [
+        {
+            "name": "name",
+            "label": "name",
+            "type": "text",
+            "searchable": true,
+            "id": "u:a6c20dfcdbfb"
+        },
+        {
+            "name": "templage_html",
+            "label": "模板内容",
+            "type": "editor",
+            "language": "html",
+            "disabled": true,
+            "id": "u:3b7068dfb9ce"
+        },
+        {
+            "type": "operation",
+            "label": "操作",
+            "buttons": [
+                {
+                    "label": "编辑",
+                    "type": "button",
+                    "actionType": "dialog",
+                    "level": "link",
+                    "editorSetting": {
+                        "behavior": "update"
+                    },
+                    "dialog": {
+                        "title": "编辑",
+                        "size": "full",
+                        "body": {
+                            "type": "form",
+                            "api": {
+                                "url": "/control/template",
+                                "method": "put"
+                            },
+                            "body": [
+                                {
+                                    "name": "name",
+                                    "label": "name",
+                                    "type": "static"
+                                },
+                                {
+                                    "name": "templage_html",
+                                    "label": "模板内容",
+                                    "type": "editor",
+                                    "language": "html",
+                                }
+                            ]
+                        }
+                    },
+                    "id": "u:4002f3d52051"
                 },
-                "columns": [
-                    {
-                        "name": "name",
-                        "label": "name",
-                        "type": "text",
-                        "searchable": true,
-                        "id": "u:a6c20dfcdbfb"
+                {
+                    "label": "查看",
+                    "type": "button",
+                    "actionType": "dialog",
+                    "level": "link",
+                    "editorSetting": {
+                        "behavior": "view"
                     },
-                    {
-                        "name": "templage_html",
-                        "label": "模板内容",
-                        "type": "editor",
-                        "language": "html",
-                        "disabled": true,
-                        "id": "u:3b7068dfb9ce"
+                    "dialog": {
+                        "title": "查看详情",
+                        "size": "full",
+                        "body": {
+                            "type": "form",
+                            "body": [
+                                {
+                                    "name": "name",
+                                    "label": "name",
+                                    "type": "static"
+                                },
+                                {
+                                    "name": "templage_html",
+                                    "label": "模板内容",
+                                    "type": "editor",
+                                    "language": "html",
+                                    "disabled": true,
+                                }
+                            ]
+                        }
                     },
-                    {
-                        "type": "operation",
-                        "label": "操作",
-                        "buttons": [
-                            {
-                                "label": "编辑",
-                                "type": "button",
-                                "actionType": "dialog",
-                                "level": "link",
-                                "editorSetting": {
-                                    "behavior": "update"
-                                },
-                                "dialog": {
-                                    "title": "编辑",
-                                    "size": "full",
-                                    "body": {
-                                        "type": "form",
-                                        "api": {
-                                            "url": "/control/template",
-                                            "method": "put"
-                                        },
-                                        "body": [
-                                            {
-                                                "name": "name",
-                                                "label": "name",
-                                                "type": "static"
-                                            },
-                                            {
-                                                "name": "templage_html",
-                                                "label": "模板内容",
-                                                "type": "editor",
-                                                "language": "html",
-                                            }
-                                        ]
-                                    }
-                                },
-                                "id": "u:4002f3d52051"
-                            },
-                            {
-                                "label": "查看",
-                                "type": "button",
-                                "actionType": "dialog",
-                                "level": "link",
-                                "editorSetting": {
-                                    "behavior": "view"
-                                },
-                                "dialog": {
-                                    "title": "查看详情",
-                                    "size": "full",
-                                    "body": {
-                                        "type": "form",
-                                        "body": [
-                                            {
-                                                "name": "name",
-                                                "label": "name",
-                                                "type": "static"
-                                            },
-                                            {
-                                                "name": "templage_html",
-                                                "label": "模板内容",
-                                                "type": "editor",
-                                                "language": "html",
-                                                "disabled": true,
-                                            }
-                                        ]
-                                    }
-                                },
-                                "id": "u:8ef7b4af7281"
-                            },
-                            {
-                                "type": "button",
-                                "label": "删除",
-                                "actionType": "ajax",
-                                "level": "link",
-                                "className": "text-danger",
-                                "confirmText": "确定要删除？",
-                                "api": {
-                                    "url": "/control/template",
-                                    "method": "delete",
-                                    "data": {
-                                        "name": "${name}",
-                                        "templage_html": "${templage_html}"
-                                    }
-                                },
-                                "editorSetting": {
-                                    "behavior": "delete"
-                                },
-                                "id": "u:53625cd9ec5e"
-                            }
-                        ],
-                        "id": "u:bbcf08819adb"
-                    }
-                ],
-                "itemActions": [],
-                "headerToolbar": [
-                    {
-                        "label": "新增",
-                        "type": "button",
-                        "actionType": "dialog",
-                        "level": "primary",
-                        "editorSetting": {
-                            "behavior": "create"
-                        },
-                        "dialog": {
-                            "title": "新增",
-                            "size": "full",
-                            "body": {
-                                "type": "form",
-                                "api": {
-                                    "method": "post",
-                                    "url": "/control/template"
-                                },
-                                "body": [
-                                    {
-                                        "type": "input-text",
-                                        "name": "name",
-                                        "label": "name"
-                                    },
-                                    {
-                                        "type": "editor",
-                                        "language": "html",
-                                        "name": "templage_html",
-                                        "value": placeholder,
-                                        "label": "模板内容",
-                                    }
-                                ]
-                            }
-                        },
-                        "id": "u:dc19a565fa1c"
+                    "id": "u:8ef7b4af7281"
+                },
+                {
+                    "type": "button",
+                    "label": "删除",
+                    "actionType": "ajax",
+                    "level": "link",
+                    "className": "text-danger",
+                    "confirmText": "确定要删除？",
+                    "api": {
+                        "url": "/control/template",
+                        "method": "delete",
+                        "data": {
+                            "name": "${name}",
+                            "templage_html": "${templage_html}"
+                        }
                     },
-                    "bulkActions"
-                ],
-                "id": "u:8968d6f6e859",
-                "title": "模板列表"
+                    "editorSetting": {
+                        "behavior": "delete"
+                    },
+                    "id": "u:53625cd9ec5e"
+                }
+            ],
+            "id": "u:bbcf08819adb"
+        }
+    ],
+    "itemActions": [],
+    "headerToolbar": [
+        {
+            "label": "新增",
+            "type": "button",
+            "actionType": "dialog",
+            "level": "primary",
+            "editorSetting": {
+                "behavior": "create"
             },
-        ],
-    }
+            "dialog": {
+                "title": "新增",
+                "size": "full",
+                "body": {
+                    "type": "form",
+                    "api": {
+                        "method": "post",
+                        "url": "/control/template"
+                    },
+                    "body": [
+                        {
+                            "type": "input-text",
+                            "name": "name",
+                            "label": "name"
+                        },
+                        {
+                            "type": "editor",
+                            "language": "html",
+                            "name": "templage_html",
+                            "value": placeholder,
+                            "label": "模板内容",
+                        }
+                    ]
+                }
+            },
+            "id": "u:dc19a565fa1c"
+        },
+        "bulkActions"
+    ],
+    "id": "u:8968d6f6e859",
 };
