@@ -1,19 +1,96 @@
 templates:
-  name3:
-    name: name3
-    templage_html: templage_html
-  name2:
-    name: name2
-    templage_html: templage_html
+  n1:
+    name: n1
+    templage_html: |-
+      <!DOCTYPE html>
+      <html>
+
+      <head>
+          <title>Demo</title>
+          <!-- 这里提供amis脚本 -->
+          <link rel="stylesheet" href="/static/amis/sdk.css" />
+          <link rel="stylesheet" href="/static/amis/helper.css" />
+          <link rel="stylesheet" href="/static/amis/iconfont.css" />
+          <!-- 这是默认主题所需的，如果是其他主题则不需要 -->
+          <!-- 从 1.1.0 开始 sdk.css 将不支持 IE 11，如果要支持 IE11 请引用这个 css，并把前面那个删了 -->
+          <!-- <link rel="stylesheet" href="sdk-ie11.css" /> -->
+          <!-- 不过 amis 开发团队几乎没测试过 IE 11 下的效果，所以可能有细节功能用不了，如果发现请报 issue -->
+          <style>
+              html,
+              body,
+              .app-wrapper {
+                  position: relative;
+                  width: 100%;
+                  height: 100%;
+                  margin: 0;
+                  padding: 0;
+              }
+          </style>
+          <!-- 这里提供jq脚本 -->
+          <script src="/static/js/jquery-3.7.1.min.js"></script>
+      </head>
+
+      <body>
+          <h1 id="a1">Demo</h1>
+          <div id="root" class="app-wrapper"></div>
+          <a id="a1">点击这里</a>
+          <!-- 构建template必须要加上下面这一行
+              这一行会替换为 <script>var req={};script;/script>
+              其中req是请求参数, 可以在后续调用中使用,
+              ResetScript是用户自定义的js脚本, 用于为temp提供动态数据
+          -->
+          <script>{ { DATA } };</script>
+          <script src="/static/amis/sdk.js"></script>
+          <script>
+          (function () {
+              $("#a1").text("Hello world Demo!");
+              let amis = amisRequire('amis/embed');
+              // 通过替换下面这个配置来生成不同页面
+              let amisJSON = {
+                  "type": "page",
+                  "body": {
+                      "type": "json",
+                      "levelExpand": 3,
+                      "value": req,
+                  }
+              };
+              let amisScoped = amis.embed('#root', amisJSON);
+          })();
+          </script>
+      </body>
+
+      </html>
 api_routers:
-  ':':
-    key: ':'
-    name: ''
-    method: ''
-    path: ''
-    code: 1
+  POST:/ccc2:
+    key: POST:/ccc2
+    name: test
+    method: POST
+    path: /ccc2
+    code: 200
+    script: '"sfdfdsfdsfdsf"'
+    header_script: ''
+    code_script: ''
+    is_html: false
+    template: ''
+  POST:/ssdf1:
+    key: POST:/ssdf1
+    name: test
+    method: POST
+    path: /ssdf1
+    code: 200
     script: ''
     header_script: ''
     code_script: ''
     is_html: false
     template: ''
+  GET:/dsfdsfdsfdsf:
+    key: GET:/dsfdsfdsfdsf
+    name: m12
+    method: GET
+    path: /dsfdsfdsfdsf
+    code: 200
+    script: ''
+    header_script: ''
+    code_script: ''
+    is_html: true
+    template: n1

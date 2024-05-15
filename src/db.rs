@@ -64,7 +64,7 @@ fn check_file_modified(file_path: &str, old_time: SystemTime) -> bool {
     false
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DB {
     pub datas: Datas,
     pub old_time: SystemTime,

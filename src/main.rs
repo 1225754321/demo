@@ -1,4 +1,5 @@
 use router::Manger;
+use salvo::http::header::LOCATION;
 use salvo::serve_static::StaticDir;
 use salvo::{
     http::{mime, HeaderName},
@@ -27,23 +28,49 @@ struct RequestInfo {
 }
 
 #[handler]
-async fn manger_run(req: &mut Request, resp: &mut Response) -> String {
+async fn manger_run(req: &mut Request, resp: &mut Response) {
+    if req.uri().path() == "/" {
+        resp.headers.insert(LOCATION, "/static/".parse().unwrap());
+        resp.status_code(StatusCode::FOUND);
+        return;
+    }
+    if req.uri().path() == "/favicon.ico" {
+        resp.headers
+            .insert(LOCATION, "/static/favicon.ico".parse().unwrap());
+        resp.status_code(StatusCode::FOUND);
+        return;
+    }
+
+    println!("manger_run.uri => {}", req.uri());
+
     let mut files: Vec<HashMap<String, String>> = Vec::new();
     let mut from_utf8: String = String::new();
     let mut from_json = HashMap::new();
 
+    println!("manger_run.uri2 => {}", req.uri());
     // 获取router_node
     let router_node: db::RouterNode;
     {
         let manger = MANGER.get().unwrap().lock().await;
-        if let Some(temp) = manger.query(&req.method().to_string(), &req.uri().path().to_string()) {
+        println!(
+            "manger_run.uri2.1 => {} - {}",
+            &req.method().to_string(),
+            &req.uri().path().to_string()
+        );
+        if let Some(temp) = manger.query(
+            &req.method().to_string().to_uppercase(),
+            &req.uri().path().to_string(),
+        ) {
+            println!("manger_run.uri2.2 => {}", req.uri());
             router_node = temp.clone();
         } else {
+            println!("manger_run.uri2.3 => {}", req.uri());
             resp.status_code(StatusCode::NOT_FOUND);
-            return "".to_string();
+            return;
         }
     }
 
+    println!("manger_run.uri3 => {}", req.uri());
     if let Some(ctype) = req.content_type() {
         if ctype.subtype() == mime::FORM_DATA {
             if let Ok(temp) = req.form_data().await {
@@ -79,18 +106,22 @@ async fn manger_run(req: &mut Request, resp: &mut Response) -> String {
         }
     }
 
+    println!("manger_run.uri4 => {}", req.uri());
     let r = req.payload().await.unwrap();
     if let Ok(temp) = String::from_utf8(r.to_vec()) {
         if !temp.is_empty() {
             from_utf8 = temp;
         }
     }
+
+    println!("manger_run.uri5 => {}", req.uri());
     if let Ok(parse_json) = req.parse_json::<HashMap<String, Value>>().await {
         if !parse_json.is_empty() {
             from_json = parse_json;
         }
     }
 
+    println!("manger_run.uri6 => {}", req.uri());
     let req_info = RequestInfo {
         method: req.method().to_string(),
         url: req.uri().to_string(),
@@ -110,8 +141,10 @@ async fn manger_run(req: &mut Request, resp: &mut Response) -> String {
             .map(|(k, v)| (k.to_string(), v.clone()))
             .collect(),
     };
+
+    println!("manger_run.uri7 => {}", req.uri());
     let mut run_js_data = Option::None;
-    if !router_node.script.is_empty() {
+    if !router_node.script.is_empty() && !router_node.is_html {
         let run_js_script = format!(
             "req={};{}",
             serde_json::to_string(&req_info).unwrap(),
@@ -122,6 +155,7 @@ async fn manger_run(req: &mut Request, resp: &mut Response) -> String {
         println!("run_js_script.script.data => {:?}\n", &run_js_data);
     }
 
+    println!("manger_run.uri8 => {}", req.uri());
     // 设置code
     if !router_node.code_script.is_empty() {
         let run_js_script = format!(
@@ -137,6 +171,7 @@ async fn manger_run(req: &mut Request, resp: &mut Response) -> String {
         resp.status_code(code);
     }
 
+    println!("manger_run.uri9 => {}", req.uri());
     // 设置headers
     if !router_node.header_script.is_empty() {
         let run_js_script = format!(
@@ -158,7 +193,7 @@ async fn manger_run(req: &mut Request, resp: &mut Response) -> String {
                 }
             } else {
                 resp.status_code(StatusCode::NOT_FOUND);
-                return "header_script is err".to_string();
+                return;
             }
         }
     }
@@ -168,23 +203,27 @@ async fn manger_run(req: &mut Request, resp: &mut Response) -> String {
         {
             let template;
             let manger = MANGER.get().unwrap().lock().await;
-            template = manger.get_template(&router_node.name).unwrap();
-            if let Some(data) = &run_js_data {
-                let res = template
-                    .templage_html
-                    .replace("TEMPLAGE_SCRIPT", &serde_json::to_string(data).unwrap());
-                println!("res = {}\n", &res);
-                res
-            } else {
-                println!("res = null\n");
-                template.templage_html.replace("TEMPLAGE_SCRIPT", "")
-            }
+            template = manger.get_template(&router_node.template).unwrap();
+            let res = template.templage_html.replace(
+                "{ { DATA } }",
+                &format!(
+                    "req={};{};",
+                    &serde_json::to_string(&req_info).unwrap(),
+                    router_node.script
+                ),
+            );
+            println!("res = {}\n", &res);
+            resp.render(Text::Html(res));
         }
     } else {
         if let Some(data) = &run_js_data {
-            format!("{}", serde_json::to_string(data).unwrap())
+            resp.render(Text::Json(format!(
+                "{}",
+                serde_json::to_string(data).unwrap()
+            )));
+            return;
         } else {
-            "".to_string()
+            return;
         }
     }
 }
@@ -203,14 +242,14 @@ async fn main() {
                         .get(get_api)
                         .post(set_api)
                         .delete(del_api)
-                        .put(set_api),
+                        .put(update_api),
                 )
                 .push(
                     Router::with_path("/html")
                         .get(get_html)
                         .post(set_html)
                         .delete(del_api)
-                        .put(set_html),
+                        .put(update_url),
                 )
                 .push(
                     Router::with_path("/template")
@@ -221,7 +260,7 @@ async fn main() {
                 ),
         )
         .push(
-            Router::with_path("<**path>").get(
+            Router::with_path("/static/<**path>").get(
                 StaticDir::new(["static"])
                     .defaults("index.html")
                     .auto_list(true),
@@ -275,11 +314,54 @@ async fn set_api(req: &mut Request) -> String {
     )
 }
 #[handler]
+async fn update_api(req: &mut Request) -> String {
+    let mut router_node: db::RouterNode = req.parse_json().await.unwrap();
+    let key: String = req.query("key").unwrap();
+    {
+        let mut manger = MANGER.get().unwrap().lock().await;
+        router_node.is_html = false;
+        println!("update_api =>{:?}", router_node);
+        manger.del_api(&key).await;
+        manger.set_api(router_node).await;
+    }
+    format!(
+        "{}",
+        serde_json::to_string(&Res::<String> {
+            status: 0,
+            msg: "".to_string(),
+            data: None
+        })
+        .unwrap()
+    )
+}
+#[handler]
+async fn update_url(req: &mut Request) -> String {
+    let mut router_node: db::RouterNode = req.parse_json().await.unwrap();
+    let key: String = req.query("key").unwrap();
+    {
+        let mut manger = MANGER.get().unwrap().lock().await;
+        router_node.is_html = true;
+        println!("update_url =>{:?}", router_node);
+        manger.del_api(&key).await;
+        manger.set_api(router_node).await;
+    }
+    format!(
+        "{}",
+        serde_json::to_string(&Res::<String> {
+            status: 0,
+            msg: "".to_string(),
+            data: None
+        })
+        .unwrap()
+    )
+}
+#[handler]
 async fn del_api(req: &mut Request) -> String {
     let router_node: db::RouterNode = req.parse_json().await.unwrap();
     {
         let mut manger = MANGER.get().unwrap().lock().await;
-        manger.del_api(router_node).await;
+        println!("del_api =>{:?}", router_node);
+        manger.del_api(&router_node.key()).await;
     }
     format!(
         "{}",

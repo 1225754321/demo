@@ -1,0 +1,141 @@
+@host = http://127.0.0.1:8080
+@contentType = application/json
+
+
+###
+GET {{host}}/control/api
+
+###
+POST {{host}}/control/api
+Content-Type: {{contentType}}
+
+{
+    "key": "",
+    "name": "",
+    "method": "GET",
+    "path": "/test",
+    "code": 1,
+    "script": "data={\"test\": \"cccc\",\"csa\": \"sdfsdfds\"};data",
+    "header_script": "data={\"test\": \"555\",\"csa\": \"123\"};data",
+    "code_script": "512",
+    "is_html": true,
+    "template": ""
+}
+
+###
+PUT {{host}}/control/api
+Content-Type: {{contentType}}
+
+{
+    "key": "",
+    "name": "",
+    "method": "GET",
+    "path": "/test2",
+    "code": 1,
+    "script": "data={\"test\": \"cccc\",\"csa\": \"sdfsdfds\"};data",
+    "header_script": "data={\"test\": \"555\",\"csa\": \"123\"};data",
+    "code_script": "512",
+    "is_html": true,
+    "template": ""
+}
+
+###
+DELETE {{host}}/control/api
+Content-Type: {{contentType}}
+
+{
+    "key": "",
+    "name": "",
+    "method": "GET",
+    "path": "/test2",
+    "code": 1,
+    "script": "data={\"test\": \"cccc\",\"csa\": \"sdfsdfds\"};data",
+    "header_script": "data={\"test\": \"555\",\"csa\": \"123\"};data",
+    "code_script": "512",
+    "is_html": true,
+    "template": ""
+}
+
+###
+GET {{host}}/control/html
+
+###
+POST {{host}}/control/html
+Content-Type: {{contentType}}
+
+{
+    "key": "",
+    "name": "",
+    "method": "GET",
+    "path": "/test",
+    "code": 1,
+    "script": "data={\"test\": \"cccc\",\"csa\": \"sdfsdfds\"};data",
+    "header_script": "data={\"test\": \"555\",\"csa\": \"123\"};data",
+    "code_script": "512",
+    "is_html": true,
+    "template": ""
+}
+
+###
+PUT {{host}}/control/html
+Content-Type: {{contentType}}
+
+{
+    "key": "",
+    "name": "",
+    "method": "GET",
+    "path": "/test2",
+    "code": 1,
+    "script": "data={\"test\": \"cccc\",\"csa\": \"sdfsdfds\"};data",
+    "header_script": "data={\"test\": \"555\",\"csa\": \"123\"};data",
+    "code_script": "512",
+    "is_html": true,
+    "template": ""
+}
+
+###
+DELETE {{host}}/control/html
+Content-Type: {{contentType}}
+
+{
+    "key": "",
+    "name": "",
+    "method": "GET",
+    "path": "/test2",
+    "code": 1,
+    "script": "data={\"test\": \"cccc\",\"csa\": \"sdfsdfds\"};data",
+    "header_script": "data={\"test\": \"555\",\"csa\": \"123\"};data",
+    "code_script": "512",
+    "is_html": true,
+    "template": ""
+}
+
+###
+GET {{host}}/control/template
+
+###
+POST {{host}}/control/template
+Content-Type: {{contentType}}
+
+{
+    "name": "name1",
+    "templage_html": "templage_html"
+}
+
+###
+PUT {{host}}/control/template
+Content-Type: {{contentType}}
+
+{
+    "name": "name2",
+    "templage_html": "templage_html"
+}
+
+###
+DELETE {{host}}/control/template
+Content-Type: {{contentType}}
+
+{
+    "name": "name1",
+    "templage_html": "templage_html"
+}

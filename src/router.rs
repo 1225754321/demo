@@ -10,7 +10,14 @@ impl Manger {
     pub async fn new() -> Manger {
         let router_tree = Pretree::new();
         let db = DB::new_default().await;
-        Manger { router_tree, db }
+        let mut m = Manger {
+            router_tree,
+            db: db.clone(),
+        };
+        for r in db.datas.api_routers.values() {
+            m.set_api(r.clone()).await;
+        }
+        return m;
     }
     pub async fn del_template(&mut self, template: Template) {
         self.db.remove_template(&template.name).await;
@@ -24,10 +31,11 @@ impl Manger {
     pub fn get_templates(&self) -> Vec<&Template> {
         self.db.datas.templates.values().into_iter().collect()
     }
-    pub async fn del_api(&mut self, node: RouterNode) {
-        self.db.remove_api(&node.key()).await;
+    pub async fn del_api(&mut self, key: &str) {
+        self.db.remove_api(key).await;
     }
-    pub async fn set_api(&mut self, node: RouterNode) {
+    pub async fn set_api(&mut self, mut node: RouterNode) {
+        node.method = node.method.to_uppercase();
         self.router_tree
             .store(node.method.clone(), node.path.clone());
         self.db.set_api(node.clone()).await;
