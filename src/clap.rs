@@ -1,8 +1,8 @@
 use clap::Parser;
 
-/// The example of clap derive
+/// urlmock程序
 #[derive(Parser)]
-#[command(version, author, about, long_about = None)]
+#[command(version="0.0.2", author, about, long_about = None)]
 pub struct Cli {
     /// host配置
     #[arg(short = 's', long, default_value = "0.0.0.0")]
