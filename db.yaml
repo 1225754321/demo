@@ -61,17 +61,6 @@ templates:
 
       </html>
 api_routers:
-  POST:/ccc2:
-    key: POST:/ccc2
-    name: test
-    method: POST
-    path: /ccc2
-    code: 200
-    script: '"sfdfdsfdsfdsf"'
-    header_script: ''
-    code_script: ''
-    is_html: false
-    template: ''
   GET:/dsfdsfdsfdsf:
     key: GET:/dsfdsfdsfdsf
     name: m12
@@ -94,13 +83,24 @@ api_routers:
     code_script: ''
     is_html: false
     template: ''
-  POST:/eest:
-    key: POST:/eest
-    name: test2
+  POST:/ccc2:
+    key: POST:/ccc2
+    name: test
     method: POST
+    path: /ccc2
+    code: 200
+    script: '"sfdfdsfdsfdsf"'
+    header_script: ''
+    code_script: ''
+    is_html: false
+    template: ''
+  GET:/eest:
+    key: GET:/eest
+    name: test2
+    method: GET
     path: /eest
     code: 200
-    script: ''
+    script: req
     header_script: ''
     code_script: ''
     is_html: false
