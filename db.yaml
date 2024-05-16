@@ -61,13 +61,13 @@ templates:
 
       </html>
 api_routers:
-  POST:/ssdf1:
-    key: POST:/ssdf1
+  POST:/ccc2:
+    key: POST:/ccc2
     name: test
     method: POST
-    path: /ssdf1
+    path: /ccc2
     code: 200
-    script: ''
+    script: '"sfdfdsfdsfdsf"'
     header_script: ''
     code_script: ''
     is_html: false
@@ -83,13 +83,13 @@ api_routers:
     code_script: ''
     is_html: true
     template: n1
-  POST:/ccc2:
-    key: POST:/ccc2
+  POST:/ssdf1:
+    key: POST:/ssdf1
     name: test
     method: POST
-    path: /ccc2
+    path: /ssdf1
     code: 200
-    script: '"sfdfdsfdsfdsf"'
+    script: ''
     header_script: ''
     code_script: ''
     is_html: false

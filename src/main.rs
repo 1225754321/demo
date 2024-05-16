@@ -1,3 +1,5 @@
+use ::clap::Parser;
+use clap::Cli;
 use router::Manger;
 use salvo::http::header::LOCATION;
 use salvo::serve_static::StaticDir;
@@ -9,6 +11,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 use tokio::sync::{Mutex, OnceCell};
+pub mod clap;
 pub mod db;
 pub mod js;
 pub mod router;
@@ -233,6 +236,7 @@ static MANGER: OnceCell<Mutex<Manger>> = OnceCell::const_new();
 
 #[tokio::main]
 async fn main() {
+    let parse = Cli::parse();
     tracing_subscriber::fmt().init();
     MANGER.set(Mutex::new(router::Manger::new().await)).unwrap();
     let router = Router::new()
@@ -268,7 +272,9 @@ async fn main() {
             ),
         )
         .push(Router::with_path("<**pahts>").goal(manger_run));
-    let acceptor = TcpListener::new("0.0.0.0:8080").bind().await;
+    let acceptor = TcpListener::new(format!("{}:{}", parse.host.unwrap(), parse.port.unwrap()))
+        .bind()
+        .await;
     let server = Server::new(acceptor);
     server.serve(router).await;
 }
