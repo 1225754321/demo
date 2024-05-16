@@ -152,7 +152,7 @@ async fn manger_run(req: &mut Request, resp: &mut Response) {
             router_node.script
         );
         println!("run_js_script.script => {}\n", &run_js_script);
-        run_js_data = Some(js::run_js(run_js_script));
+        run_js_data = Some(js::run_js(&run_js_script));
         println!("run_js_script.script.data => {:?}\n", &run_js_data);
     }
 
@@ -165,7 +165,7 @@ async fn manger_run(req: &mut Request, resp: &mut Response) {
             router_node.code_script
         );
         println!("run_js_script.code => {}\n", &run_js_script);
-        let script_data = js::run_js(run_js_script);
+        let script_data = js::run_js(&run_js_script);
         println!("run_js_script.code.data => {}\n", script_data);
         let code = script_data.as_i64().unwrap();
         let code = StatusCode::from_u16(code as u16).unwrap();
@@ -181,7 +181,7 @@ async fn manger_run(req: &mut Request, resp: &mut Response) {
             router_node.header_script
         );
         println!("run_js_script.header => {}\n", &run_js_script);
-        let script_data = js::run_js(run_js_script);
+        let script_data = js::run_js(&run_js_script);
         println!("run_js_script.header.data => {}\n", script_data);
         if !script_data.is_null() {
             if script_data.is_object() {
@@ -268,7 +268,7 @@ async fn main() {
             ),
         )
         .push(Router::with_path("<**pahts>").goal(manger_run));
-    let acceptor = TcpListener::new("127.0.0.1:8080").bind().await;
+    let acceptor = TcpListener::new("0.0.0.0:8080").bind().await;
     let server = Server::new(acceptor);
     server.serve(router).await;
 }
@@ -464,13 +464,21 @@ async fn get_templage(req: &mut Request) -> String {
     {
         let page_q: PageQ = req.parse_queries().unwrap();
         println!("get_templage => {:?}", page_q);
-        let left = (page_q.page.unwrap() - 1) * page_q.per_page.unwrap();
         let manger = MANGER.get().unwrap().lock().await;
         let test = manger.get_templates();
-        let mut right = left + page_q.per_page.unwrap();
-        if right > test.len() {
+        let left;
+        let mut right;
+        if page_q.page.is_none() && page_q.per_page.is_none() {
+            left = 0;
             right = test.len();
+        } else {
+            left = (page_q.page.unwrap() - 1) * page_q.per_page.unwrap();
+            right = left + page_q.per_page.unwrap();
+            if right > test.len() {
+                right = test.len();
+            }
         }
+
         format!(
             "{}",
             serde_json::to_string(&Res {

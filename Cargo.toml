@@ -6,8 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-deno_core = "0.280.0"
-serde_v8 = "0.189.0"
+boa_engine = "0.18.0"
 salvo = { version = "0.67.1", features = ["serve-static"] }
 tokio = { version = "1", features = ["macros"] }
 tracing = "0.1"
