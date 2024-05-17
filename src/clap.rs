@@ -1,9 +1,14 @@
 use clap::Parser;
+use tracing::Level;
 
 /// urlmock程序
 #[derive(Parser, Default, Debug)]
 #[command(version="0.0.2", author, about, long_about = None)]
 pub struct Cli {
+    /// log级别
+    #[arg(short, long, default_value = "info")]
+    pub log: Option<Level>,
+
     /// host配置
     #[arg(short = 't', long, default_value = "0.0.0.0")]
     pub host: Option<String>,

@@ -1,8 +1,10 @@
 use ::clap::Parser;
 use clap::Cli;
+use log::{debug, info};
 use router::Manger;
 use salvo::conn::rustls::{Keycert, RustlsConfig};
 use salvo::http::header::LOCATION;
+use salvo::logging::Logger;
 use salvo::serve_static::StaticDir;
 use salvo::{
     http::{mime, HeaderName},
@@ -14,6 +16,7 @@ use std::collections::HashMap;
 use std::net::Ipv4Addr;
 use tokio::fs;
 use tokio::sync::{Mutex, OnceCell};
+use tracing_subscriber::fmt::format;
 pub mod clap;
 pub mod db;
 pub mod js;
@@ -48,18 +51,18 @@ async fn manger_run(req: &mut Request, resp: &mut Response) {
         return;
     }
 
-    println!("manger_run.uri => {}", req.uri());
+    debug!("manger_run.uri => {}", req.uri());
 
     let mut files: Vec<HashMap<String, String>> = Vec::new();
     let mut from_utf8: String = String::new();
     let mut from_json = HashMap::new();
 
-    println!("manger_run.uri2 => {}", req.uri());
+    debug!("manger_run.uri2 => {}", req.uri());
     // 获取router_node
     let router_node: db::RouterNode;
     {
         let manger = MANGER.get().unwrap().lock().await;
-        println!(
+        debug!(
             "manger_run.uri2.1 => {} - {}",
             &req.method().to_string(),
             &req.uri().path().to_string()
@@ -68,16 +71,16 @@ async fn manger_run(req: &mut Request, resp: &mut Response) {
             &req.method().to_string().to_uppercase(),
             &req.uri().path().to_string(),
         ) {
-            println!("manger_run.uri2.2 => {}", req.uri());
+            debug!("manger_run.uri2.2 => {}", req.uri());
             router_node = temp.clone();
         } else {
-            println!("manger_run.uri2.3 => {}", req.uri());
+            debug!("manger_run.uri2.3 => {}", req.uri());
             resp.status_code(StatusCode::NOT_FOUND);
             return;
         }
     }
 
-    println!("manger_run.uri3 => {}", req.uri());
+    debug!("manger_run.uri3 => {}", req.uri());
     if let Some(ctype) = req.content_type() {
         if ctype.subtype() == mime::FORM_DATA {
             if let Ok(temp) = req.form_data().await {
@@ -113,7 +116,7 @@ async fn manger_run(req: &mut Request, resp: &mut Response) {
         }
     }
 
-    println!("manger_run.uri4 => {}", req.uri());
+    debug!("manger_run.uri4 => {}", req.uri());
     let r = req.payload().await.unwrap();
     if let Ok(temp) = String::from_utf8(r.to_vec()) {
         if !temp.is_empty() {
@@ -121,14 +124,14 @@ async fn manger_run(req: &mut Request, resp: &mut Response) {
         }
     }
 
-    println!("manger_run.uri5 => {}", req.uri());
+    debug!("manger_run.uri5 => {}", req.uri());
     if let Ok(parse_json) = req.parse_json::<HashMap<String, Value>>().await {
         if !parse_json.is_empty() {
             from_json = parse_json;
         }
     }
 
-    println!("manger_run.uri6 => {}", req.uri());
+    debug!("manger_run.uri6 => {}", req.uri());
     let req_info = RequestInfo {
         method: req.method().to_string(),
         url: req.uri().to_string(),
@@ -149,7 +152,7 @@ async fn manger_run(req: &mut Request, resp: &mut Response) {
             .collect(),
     };
 
-    println!("manger_run.uri7 => {}", req.uri());
+    debug!("manger_run.uri7 => {}", req.uri());
     let mut run_js_data = Option::None;
     if !router_node.script.is_empty() && !router_node.is_html {
         let run_js_script = format!(
@@ -157,12 +160,12 @@ async fn manger_run(req: &mut Request, resp: &mut Response) {
             serde_json::to_string(&req_info).unwrap(),
             router_node.script
         );
-        println!("run_js_script.script => {}\n", &run_js_script);
+        debug!("run_js_script.script => {}\n", &run_js_script);
         run_js_data = Some(js::run_js(&run_js_script));
-        println!("run_js_script.script.data => {:?}\n", &run_js_data);
+        debug!("run_js_script.script.data => {:?}\n", &run_js_data);
     }
 
-    println!("manger_run.uri8 => {}", req.uri());
+    debug!("manger_run.uri8 => {}", req.uri());
     // 设置code
     if !router_node.code_script.is_empty() {
         let run_js_script = format!(
@@ -170,15 +173,15 @@ async fn manger_run(req: &mut Request, resp: &mut Response) {
             serde_json::to_string(&req_info).unwrap(),
             router_node.code_script
         );
-        println!("run_js_script.code => {}\n", &run_js_script);
+        debug!("run_js_script.code => {}\n", &run_js_script);
         let script_data = js::run_js(&run_js_script);
-        println!("run_js_script.code.data => {}\n", script_data);
+        debug!("run_js_script.code.data => {}\n", script_data);
         let code = script_data.as_i64().unwrap();
         let code = StatusCode::from_u16(code as u16).unwrap();
         resp.status_code(code);
     }
 
-    println!("manger_run.uri9 => {}", req.uri());
+    debug!("manger_run.uri9 => {}", req.uri());
     // 设置headers
     if !router_node.header_script.is_empty() {
         let run_js_script = format!(
@@ -186,9 +189,9 @@ async fn manger_run(req: &mut Request, resp: &mut Response) {
             serde_json::to_string(&req_info).unwrap(),
             router_node.header_script
         );
-        println!("run_js_script.header => {}\n", &run_js_script);
+        debug!("run_js_script.header => {}\n", &run_js_script);
         let script_data = js::run_js(&run_js_script);
-        println!("run_js_script.header.data => {}\n", script_data);
+        debug!("run_js_script.header.data => {}\n", script_data);
         if !script_data.is_null() {
             if script_data.is_object() {
                 for (k, v) in script_data.as_object().unwrap() {
@@ -205,7 +208,7 @@ async fn manger_run(req: &mut Request, resp: &mut Response) {
         }
     }
 
-    println!("router_node = {:?}\n", router_node);
+    debug!("router_node = {:?}\n", router_node);
     if router_node.is_html {
         {
             let template;
@@ -219,7 +222,7 @@ async fn manger_run(req: &mut Request, resp: &mut Response) {
                     router_node.script
                 ),
             );
-            println!("res = {}\n", &res);
+            debug!("res = {}\n", &res);
             resp.render(Text::Html(res));
         }
     } else {
@@ -239,8 +242,19 @@ static MANGER: OnceCell<Mutex<Manger>> = OnceCell::const_new();
 
 #[tokio::main]
 async fn main() {
-    let parse = Cli::parse();
-    tracing_subscriber::fmt().init();
+    let cli = Cli::parse();
+    info!("init => {:?}", &cli);
+    tracing_subscriber::fmt()
+        .event_format(
+            format()
+                .with_ansi(true)
+                .with_file(true)
+                .with_line_number(true)
+                .compact(),
+        )
+        .with_max_level(cli.log.unwrap())
+        .with_level(true)
+        .init();
     MANGER.set(Mutex::new(router::Manger::new().await)).unwrap();
     let router = Router::new()
         .push(
@@ -276,18 +290,18 @@ async fn main() {
         )
         .push(Router::with_path("<**pahts>").goal(manger_run));
     // http协议
-    let acceptor1 = TcpListener::new(format!("{}:{}", parse.host.unwrap(), parse.port.unwrap()));
+    let acceptor1 = TcpListener::new(format!("{}:{}", cli.host.unwrap(), cli.port.unwrap()));
     // TLS
-    let cert = fs::read(parse.https_crt.unwrap()).await.unwrap();
-    let key = fs::read(parse.https_key.unwrap()).await.unwrap();
+    let cert = fs::read(cli.https_crt.unwrap()).await.unwrap();
+    let key = fs::read(cli.https_key.unwrap()).await.unwrap();
     let config = RustlsConfig::new(Keycert::new().cert(cert.as_slice()).key(key.as_slice()));
     let acceptor2 = TcpListener::new(format!(
         "{}:{}",
-        parse.https_host.clone().unwrap(),
-        parse.https_port.unwrap()
+        cli.https_host.clone().unwrap(),
+        cli.https_port.unwrap()
     ))
     .rustls(config.clone());
-    let ips = parse
+    let ips = cli
         .https_host
         .unwrap()
         .split(".")
@@ -302,7 +316,7 @@ async fn main() {
                 ips.get(2).unwrap().clone(),
                 ips.get(3).unwrap().clone(),
             ),
-            parse.https_port.unwrap(),
+            cli.https_port.unwrap(),
         ),
     )
     .join(acceptor1)
@@ -310,7 +324,7 @@ async fn main() {
     .bind()
     .await;
     let server = Server::new(acceptor);
-    server.serve(router).await;
+    server.serve(router.hoop(Logger::new())).await;
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -339,7 +353,7 @@ struct PageQ {
 async fn get_api(req: &mut Request) -> String {
     {
         let page_q: PageQ = req.parse_queries().unwrap();
-        println!("get_api => {:?}", page_q);
+        debug!("get_api => {:?}", page_q);
         let left = (page_q.page.unwrap() - 1) * page_q.per_page.unwrap();
         let manger = MANGER.get().unwrap().lock().await;
         let test = manger.get_api(false);
@@ -394,7 +408,7 @@ async fn update_api(req: &mut Request) -> String {
     {
         let mut manger = MANGER.get().unwrap().lock().await;
         router_node.is_html = false;
-        println!("update_api =>{:?}", router_node);
+        debug!("update_api =>{:?}", router_node);
         manger.del_api(&key).await;
         manger.set_api(router_node).await;
     }
@@ -415,7 +429,7 @@ async fn update_url(req: &mut Request) -> String {
     {
         let mut manger = MANGER.get().unwrap().lock().await;
         router_node.is_html = true;
-        println!("update_url =>{:?}", router_node);
+        debug!("update_url =>{:?}", router_node);
         manger.del_api(&key).await;
         manger.set_api(router_node).await;
     }
@@ -434,7 +448,7 @@ async fn del_api(req: &mut Request) -> String {
     let router_node: db::RouterNode = req.parse_json().await.unwrap();
     {
         let mut manger = MANGER.get().unwrap().lock().await;
-        println!("del_api =>{:?}", router_node);
+        debug!("del_api =>{:?}", router_node);
         manger.del_api(&router_node.key()).await;
     }
     format!(
@@ -451,7 +465,7 @@ async fn del_api(req: &mut Request) -> String {
 async fn get_html(req: &mut Request) -> String {
     {
         let page_q: PageQ = req.parse_queries().unwrap();
-        println!("get_html => {:?}", page_q);
+        debug!("get_html => {:?}", page_q);
         let left = (page_q.page.unwrap() - 1) * page_q.per_page.unwrap();
         let manger = MANGER.get().unwrap().lock().await;
         let test = manger.get_api(true);
@@ -503,7 +517,7 @@ async fn set_html(req: &mut Request) -> String {
 async fn get_templage(req: &mut Request) -> String {
     {
         let page_q: PageQ = req.parse_queries().unwrap();
-        println!("get_templage => {:?}", page_q);
+        debug!("get_templage => {:?}", page_q);
         let manger = MANGER.get().unwrap().lock().await;
         let test = manger.get_templates();
         let left;

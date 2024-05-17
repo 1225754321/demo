@@ -66,13 +66,14 @@ impl Pretree {
     /// * HashMap<String, String> - Routing variables
     /// ```
     /// use pretree::Pretree;
+    /// use log::info;
     /// let mut p = Pretree::new();
     /// p.store("GET","account/{id}/info/:name");
     /// p.store("GET","account/:id/login");
     /// p.store("GET","account/{id}");
     /// p.store("GET","bacteria/count_number_by_month");
     /// let (ok,rule,vars) = p.query("GET","account/929239");
-    /// println!("ok:{} rule:{} vars:{:#?}",ok,rule,vars);
+    /// info!("ok:{} rule:{} vars:{:#?}",ok,rule,vars);
     /// assert_eq!(ok,true);
     /// assert_eq!(rule,"account/{id}");
     /// assert_eq!(vars.get("id"),Some(&"929239".to_string()));
@@ -215,6 +216,8 @@ fn is_variable(s: &str) -> bool {
 }
 #[cfg(test)]
 mod tests {
+    use log::info;
+
     #[test]
     fn test_match() {
         use super::Pretree;
@@ -246,7 +249,7 @@ mod tests {
             ["GET", "/pet/{petId}", "/pet/113"],
             ["GET", "/pet/{petId}/info", "/pet/12121/info"],
         ]; */
-        println!("{:?}", data);
+        info!("{:?}", data);
         let mut p: Pretree = Pretree::new();
         for v in data {
             let method = v[0];
@@ -259,7 +262,7 @@ mod tests {
             let url_path = v[2];
             let source_rule = v[1];
             let dt = p.query(method.into(), url_path.into());
-            println!("data: {:?} ", dt);
+            info!("data: {:?} ", dt);
         }
     }
 }

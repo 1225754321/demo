@@ -60,6 +60,8 @@ impl Manger {
 
 #[cfg(test)]
 mod tests {
+    use log::info;
+
     use crate::tree::Pretree;
     #[test]
     fn it_works() {
@@ -74,8 +76,8 @@ mod tests {
 
         // 匹配一个路由路径
         let n = trie.query("GET", "account/929239");
-        println!("n: {:?} ", n);
+        info!("n: {:?} ", n);
         let n = trie.query("GET", "/users/929239");
-        println!("n: {:?} ", n);
+        info!("n: {:?} ", n);
     }
 }

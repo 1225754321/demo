@@ -1,3 +1,4 @@
+use log::{debug, info, warn};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
@@ -45,6 +46,7 @@ async fn read_yaml_file(file_path: &str) -> (Datas, SystemTime) {
     let metadata = fs::metadata(file_path).unwrap();
     let now_time = metadata.modified().unwrap();
     if contents.is_empty() {
+        warn!("contents.is_empty()");
         contents = "templates:\napi_routers:".to_string()
     }
     (serde_yaml::from_str(&contents).unwrap(), now_time)
@@ -58,7 +60,13 @@ async fn write_yaml_file(file_path: &str, data: &Datas) -> SystemTime {
 fn check_file_modified(file_path: &str, old_time: SystemTime) -> bool {
     if let Ok(metadata) = fs::metadata(file_path) {
         if let Ok(modified_time) = metadata.modified() {
-            return modified_time > old_time;
+            if modified_time > old_time {
+                debug!(
+                    "db/update new/old time ({:#?}/{:#?})",
+                    modified_time, old_time
+                );
+                return true;
+            }
         }
     }
     false
@@ -79,6 +87,7 @@ impl DB {
     }
 
     pub async fn new(filepath: String) -> DB {
+        info!("db.path => {}", &filepath);
         if tokiofs::metadata(filepath.clone()).await.is_err() {
             let mut file = tokiofs::File::create(filepath.clone()).await.unwrap();
             file.write_all(b"").await.unwrap();
@@ -98,11 +107,12 @@ impl DB {
         }
         &self.datas
     }
-    pub async fn update(&mut self) {
+    async fn update(&mut self) {
         let old_time = write_yaml_file(&self.filepath, &self.datas).await;
         self.old_time = old_time;
     }
     pub async fn set_api(&mut self, mut router_node: RouterNode) {
+        debug!("set_api {:?}", router_node);
         router_node.key = router_node.key();
         self.datas
             .api_routers
@@ -110,15 +120,18 @@ impl DB {
         self.update().await;
     }
     pub async fn set_template(&mut self, template: Template) {
+        debug!("set_template {:?}", template);
         self.datas.templates.insert(template.name.clone(), template);
         self.update().await;
     }
     pub async fn remove_api(&mut self, key: &str) {
+        debug!("remove_api {}", key);
         if let Some(_) = self.datas.api_routers.remove(key) {
             self.update().await;
         }
     }
     pub async fn remove_template(&mut self, name: &str) {
+        debug!("remove_template {}", name);
         if let Some(_) = self.datas.templates.remove(name) {
             self.update().await;
         }

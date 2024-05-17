@@ -61,6 +61,28 @@ templates:
 
       </html>
 api_routers:
+  GET:/dsfdsfdsfdsf:
+    key: GET:/dsfdsfdsfdsf
+    name: m12
+    method: GET
+    path: /dsfdsfdsfdsf
+    code: 200
+    script: ''
+    header_script: ''
+    code_script: ''
+    is_html: true
+    template: n1
+  POST:/ssdf1:
+    key: POST:/ssdf1
+    name: test
+    method: POST
+    path: /ssdf1
+    code: 200
+    script: ''
+    header_script: ''
+    code_script: ''
+    is_html: false
+    template: ''
   GET:/eest:
     key: GET:/eest
     name: test2
@@ -83,25 +105,3 @@ api_routers:
     code_script: ''
     is_html: false
     template: ''
-  POST:/ssdf1:
-    key: POST:/ssdf1
-    name: test
-    method: POST
-    path: /ssdf1
-    code: 200
-    script: ''
-    header_script: ''
-    code_script: ''
-    is_html: false
-    template: ''
-  GET:/dsfdsfdsfdsf:
-    key: GET:/dsfdsfdsfdsf
-    name: m12
-    method: GET
-    path: /dsfdsfdsfdsf
-    code: 200
-    script: ''
-    header_script: ''
-    code_script: ''
-    is_html: true
-    template: n1
