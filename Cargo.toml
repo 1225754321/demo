@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 boa_engine = "0.18.0"
-salvo = { version = "0.67.1", features = ["serve-static"] }
+salvo = { version = "0.67.1", features = ["serve-static", "quinn"] }
 tokio = { version = "1", features = ["macros"] }
 tracing = "0.1"
 tracing-subscriber = "0.3"

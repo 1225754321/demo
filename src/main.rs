@@ -1,6 +1,7 @@
 use ::clap::Parser;
 use clap::Cli;
 use router::Manger;
+use salvo::conn::rustls::{Keycert, RustlsConfig};
 use salvo::http::header::LOCATION;
 use salvo::serve_static::StaticDir;
 use salvo::{
@@ -10,6 +11,8 @@ use salvo::{
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
+use std::net::Ipv4Addr;
+use tokio::fs;
 use tokio::sync::{Mutex, OnceCell};
 pub mod clap;
 pub mod db;
@@ -272,9 +275,40 @@ async fn main() {
             ),
         )
         .push(Router::with_path("<**pahts>").goal(manger_run));
-    let acceptor = TcpListener::new(format!("{}:{}", parse.host.unwrap(), parse.port.unwrap()))
-        .bind()
-        .await;
+    // http协议
+    let acceptor1 = TcpListener::new(format!("{}:{}", parse.host.unwrap(), parse.port.unwrap()));
+    // TLS
+    let cert = fs::read(parse.https_crt.unwrap()).await.unwrap();
+    let key = fs::read(parse.https_key.unwrap()).await.unwrap();
+    let config = RustlsConfig::new(Keycert::new().cert(cert.as_slice()).key(key.as_slice()));
+    let acceptor2 = TcpListener::new(format!(
+        "{}:{}",
+        parse.https_host.clone().unwrap(),
+        parse.https_port.unwrap()
+    ))
+    .rustls(config.clone());
+    let ips = parse
+        .https_host
+        .unwrap()
+        .split(".")
+        .map(|v| v.parse().unwrap())
+        .collect::<Vec<u8>>();
+    let acceptor = QuinnListener::new(
+        config,
+        (
+            Ipv4Addr::new(
+                ips.get(0).unwrap().clone(),
+                ips.get(1).unwrap().clone(),
+                ips.get(2).unwrap().clone(),
+                ips.get(3).unwrap().clone(),
+            ),
+            parse.https_port.unwrap(),
+        ),
+    )
+    .join(acceptor1)
+    .join(acceptor2)
+    .bind()
+    .await;
     let server = Server::new(acceptor);
     server.serve(router).await;
 }
