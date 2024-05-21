@@ -32,7 +32,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          name: Tran v0.1
+          name: Tran v0.2
           files: |
             urlmock.zip
             urlmock.tar.gz
