@@ -1,4 +1,4 @@
-name: GitHub Actions Demo
+name: Linux打包
 run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
 on: [push]
 jobs:
@@ -14,9 +14,9 @@ jobs:
             ~/.cargo/registry/cache
       - run: which cargo
       - uses: actions/checkout@v4
-    #   - name: buildurlmock
-    #     id: step1
-    #     run: cargo build -r
+      - name: buildurlmock
+        id: step1
+        run: cargo build -r
       - name: builddata
         run: cp db.yaml urlmock
       - name: zip
@@ -39,4 +39,4 @@ jobs:
             urlmock.zip
             urlmock.tar.gz
           draft: true
-          prerelease: false 
+          prerelease: false
