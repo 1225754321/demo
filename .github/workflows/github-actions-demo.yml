@@ -13,8 +13,7 @@ jobs:
           path: |
             ~/.cargo/registry/cache
       - run: which cargo
-      - name: Check out repository code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
     #   - name: buildurlmock
     #     id: step1
     #     run: cargo build -r
@@ -29,10 +28,15 @@ jobs:
         run: |
           ls ${{ github.workspace }}
       - run: echo "🍏 This job's status is ${{ job.status }}."
-      - name: Release
+      - name: Upload release assets
+        id: action_gh_release
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          name: Tran v0.1
           files: |
             urlmock.zip
             urlmock.tar.gz
+          draft: true
+          prerelease: false
