@@ -24,17 +24,14 @@ jobs:
         run: zip -r urlmock.zip keys static urlmock
       - name: tar
         run: tar -czvf urlmock.tar.gz keys static urlmock
-      - name: out1
-        id: out1
-        run: echo "zip=${{ github.workspace }}/urlmock.zip" >> "$GITHUB_OUTPUT"
-      - name: out2
-        id: out2
-        run: echo "tar=${{ github.workspace }}/urlmock.tar.gz" >> "$GITHUB_OUTPUT"
       - run: ls -alh
       - name: List files in the repository
         run: |
           ls ${{ github.workspace }}
       - run: echo "🍏 This job's status is ${{ job.status }}."
-    outputs:
-        output1: ${{ steps.out1.outputs.zip }}
-        output2: ${{ steps.out2.outputs.tar }}
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            urlmock.zip
+            urlmock.tar.gz
