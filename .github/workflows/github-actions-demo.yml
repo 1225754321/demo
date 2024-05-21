@@ -39,4 +39,4 @@ jobs:
             urlmock.zip
             urlmock.tar.gz
           draft: true
-          prerelease: false
+          prerelease: false 
