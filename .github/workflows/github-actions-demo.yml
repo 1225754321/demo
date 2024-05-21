@@ -7,13 +7,20 @@ jobs:
     steps:
       - name: pull docker
         uses: docker://amd64/rust
+      - name: Rust Cache packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry/cache
       - run: which cargo
       - name: Check out repository code
         uses: actions/checkout@v4
-      - name: build urlmock
+      - name: buildurlmock
+        id: step1
         run: cargo build -r
       - run: ls -alh
       - name: List files in the repository
         run: |
           ls ${{ github.workspace }}
       - run: echo "🍏 This job's status is ${{ job.status }}."
+      - run: echo "🍏 This job's status is ${{ steps.step1.outputs }}."
