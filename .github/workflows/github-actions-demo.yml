@@ -1,37 +1,78 @@
 name: Linux打包
-run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
-on: [push]
+
+on:
+  push:
+    branches:
+      - main  # 只在 main 分支上的 push 事件触发
+
 jobs:
-  Explore-GitHub-Actions:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: pull docker
-        uses: docker://amd64/rust
-      - run: which cargo
       - uses: actions/checkout@v4
-      - name: buildurlmock
-        id: step1
-        run: cargo build -r
-      - name: cpurlmock
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - name: Cache Cargo dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Build
+        run: cargo build --release
+      - name: Copy binary
         run: cp target/release/urlmock urlmock
-      - name: zip
-        run: zip -r urlmock.zip keys static urlmock
-      - name: tar
-        run: tar -czvf urlmock.tar.gz keys static urlmock
-      - run: pwd
-      - name: List files in the repository
+      - name: Archive files
         run: |
-          ls -alh ${{ github.workspace }}
-      - run: echo "🍏 This job's status is ${{ job.status }}."
-      - name: Upload release assets
-        id: action_gh_release
-        uses: softprops/action-gh-release@v2
+          zip -r urlmock.zip keys static urlmock
+          tar -czvf urlmock.tar.gz keys static urlmock
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: urlmock-artifacts
+          path: |
+            urlmock.zip
+            urlmock.tar.gz
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: urlmock-artifacts
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          name: Tran v0.2
-          files: |
-            urlmock.zip
-            urlmock.tar.gz
+          tag_name: v0.2
+          release_name: Tran v0.2
           draft: true
           prerelease: false
+      - name: Upload release assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: urlmock.zip
+          asset_name: urlmock.zip
+          asset_content_type: application/zip
+      - name: Upload release assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: urlmock.tar.gz
+          asset_name: urlmock.tar.gz
+          asset_content_type: application/gzip
