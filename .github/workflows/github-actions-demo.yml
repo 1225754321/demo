@@ -1,9 +1,6 @@
 name: Linux打包
 
-on:
-  push:
-    branches:
-      - main  # 只在 main 分支上的 push 事件触发
+on: [push]
 
 jobs:
   build:
