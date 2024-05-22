@@ -17,6 +17,8 @@ jobs:
       - name: buildurlmock
         id: step1
         run: cargo build -r
+      - name: cpurlmock
+        run: cp target/release/urlmock urlmock
       - name: zip
         run: zip -r urlmock.zip keys static urlmock
       - name: tar
