@@ -7,11 +7,6 @@ jobs:
     steps:
       - name: pull docker
         uses: docker://amd64/rust
-      - name: Rust Cache packages
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/registry/cache
       - run: which cargo
       - uses: actions/checkout@v4
       - name: buildurlmock
@@ -23,10 +18,10 @@ jobs:
         run: zip -r urlmock.zip keys static urlmock
       - name: tar
         run: tar -czvf urlmock.tar.gz keys static urlmock
-      - run: ls -alh
+      - run: pwd
       - name: List files in the repository
         run: |
-          ls ${{ github.workspace }}
+          ls -alh ${{ github.workspace }}
       - run: echo "🍏 This job's status is ${{ job.status }}."
       - name: Upload release assets
         id: action_gh_release
