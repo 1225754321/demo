@@ -16,7 +16,7 @@ class Line {
     }
 }
 
-function start(dots, lines, height, width) {
+function start(dots, lines, height = 1920, width = 1080) {
     let m_dots = {};
     let sources = {};
     let targets = {};
@@ -37,5 +37,5 @@ function start(dots, lines, height, width) {
     });
     dots.sort((a, b) => a.size - b.size)
     // 最小圆半径
-    let br = Math.sqrt(height * width / dots.length) / 10 / 2;
+    let br = 4; // 每多一个连接半径+0.1
 }
