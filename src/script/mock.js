@@ -38,7 +38,7 @@ ah.proxy({
         let data = { params: params, bodys: bodys }
         let method_name = (options.method + url.pathname).replaceAll("/", "_").toLowerCase();
         console.log(method_name, data);
-        return invoke(method_name, data).then(r => {
+        return invoke(method_name, { "req": data }).then(r => {
             console.log("tauri_util.invoke.then => ", r);
             handler.resolve({
                 config: options,

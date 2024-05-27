@@ -3,7 +3,7 @@ use std::sync::Arc;
 use log::info;
 //#[macro_use] define in 'root crate' or 'mod.rs' or 'main.rs'
 use rbatis::{
-    crud,
+    crud, impl_select_page,
     rbdc::datetime::DateTime,
     table_sync::{self, ColumMapper},
     RBatis,
@@ -75,7 +75,24 @@ pub struct File {
     pub update_time: Option<DateTime>,
 }
 
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize, Default)]
+pub struct DateLimit {
+    pub start_time: Option<DateTime>,
+    pub end_time: Option<DateTime>,
+}
+
 crud!(Record {});
+impl_select_page!(Record { select_page(record:Option<&Record>,create_time_limit:Option<&DateLimit>,update_time_limit:Option<&DateLimit>) => "
+if record != null:
+    if record.id != null && record.id != '':
+        `where id like #{record.id}`
+    if record.content != null && record.content != '':
+        `where content like #{record.content}`
+if create_time_limit != null && create_time_limit.start_time != null && create_time_limit.end_time != null:
+    `where create_time between #{create_time_limit.start_time} and #{create_time_limit.end_time}`
+if update_time_limit != null && update_time_limit.start_time != null && update_time_limit.end_time != null:
+    `where update_time between #{update_time_limit.start_time} and #{update_time_limit.end_time}`
+"});
 crud!(Label {});
 crud!(LabelRelationship {});
 crud!(RecordLabels {});

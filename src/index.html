@@ -44,65 +44,348 @@
                 title: '表单页面',
                 body: [
                     {
-                        type: 'form',
-                        mode: 'horizontal',
-                        api: '/saveFormerr?cc=sdfdsf',
-                        body: [
-                            {
-                                label: 'Name',
-                                type: 'input-text',
-                                name: 'name'
-                            },
-                            {
-                                label: 'Email',
-                                type: 'input-text',
-                                name: 'email'
-                            }
-                        ]
-                    },
-                    {
                         "type": "page",
-                        "body": {
-                            "type": "chart",
-                            "api": "/amis/api/mock2/chart/chartData",
-                            "config": {
-                                tooltip: {},
-                                legend: [
+                        "title": "",
+                        "body": [
+                            {
+                                "type": "crud",
+                                "syncLocation": false,
+                                "api": {
+                                    "method": "get",
+                                    "url": "/record"
+                                },
+                                "columns": [
                                     {
-                                        data: "${ARRAYMAP(categories, item => item.name)}"
+                                        "name": "id",
+                                        "label": "ID",
+                                        "type": "text",
+                                        "searchable": true,
+                                        "id": "u:292727c6920a"
+                                    },
+                                    {
+                                        "name": "content",
+                                        "label": "内容",
+                                        "type": "text",
+                                        "searchable": true,
+                                        "id": "u:cef0b36e020b"
+                                    },
+                                    {
+                                        "type": "text",
+                                        "name": "labels",
+                                        "label": "标签组",
+                                        "searchable": true,
+                                        "id": "u:cf20988feb18"
+                                    },
+                                    {
+                                        "type": "text",
+                                        "name": "quotes",
+                                        "label": "引用情况",
+                                        "searchable": true,
+                                        "id": "u:18d01b7aee38"
+                                    },
+                                    {
+                                        "type": "text",
+                                        "label": "被引用情况",
+                                        "name": "referenceds",
+                                        "searchable": true,
+                                        "id": "u:d61bb65cff32"
+                                    },
+                                    {
+                                        "type": "date",
+                                        "label": "创建时间",
+                                        "name": "create_time",
+                                        "searchable": true,
+                                        "id": "u:1dce08bd6b78"
+                                    },
+                                    {
+                                        "type": "date",
+                                        "label": "修改时间",
+                                        "name": "update_time",
+                                        "searchable": true,
+                                        "id": "u:ae3325cdede3"
+                                    },
+                                    {
+                                        "type": "operation",
+                                        "label": "操作",
+                                        "buttons": [
+                                            {
+                                                "label": "编辑",
+                                                "type": "button",
+                                                "actionType": "dialog",
+                                                "level": "link",
+                                                "editorSetting": {
+                                                    "behavior": "update"
+                                                },
+                                                "dialog": {
+                                                    "title": "编辑",
+                                                    "body": {
+                                                        "type": "form",
+                                                        "api": "xxx/update",
+                                                        "body": [
+                                                            {
+                                                                "name": "id",
+                                                                "label": "ID",
+                                                                "type": "input-text"
+                                                            },
+                                                            {
+                                                                "name": "content",
+                                                                "label": "内容",
+                                                                "type": "input-text"
+                                                            },
+                                                            {
+                                                                "name": "labels",
+                                                                "label": "标签组",
+                                                                "type": "input-text"
+                                                            },
+                                                            {
+                                                                "name": "quotes",
+                                                                "label": "引用情况",
+                                                                "type": "input-text"
+                                                            },
+                                                            {
+                                                                "label": "被引用情况",
+                                                                "name": "referenceds",
+                                                                "type": "input-text"
+                                                            },
+                                                            {
+                                                                "label": "创建时间",
+                                                                "name": "create_time",
+                                                                "type": "input-date"
+                                                            },
+                                                            {
+                                                                "label": "修改时间",
+                                                                "name": "update_time",
+                                                                "type": "input-date"
+                                                            }
+                                                        ]
+                                                    }
+                                                },
+                                                "id": "u:416549b859dc"
+                                            },
+                                            {
+                                                "label": "查看",
+                                                "type": "button",
+                                                "actionType": "dialog",
+                                                "level": "link",
+                                                "editorSetting": {
+                                                    "behavior": "view"
+                                                },
+                                                "dialog": {
+                                                    "title": "查看详情",
+                                                    "body": {
+                                                        "type": "form",
+                                                        "api": "xxx/update",
+                                                        "body": [
+                                                            {
+                                                                "name": "id",
+                                                                "label": "ID",
+                                                                "type": "static"
+                                                            },
+                                                            {
+                                                                "name": "content",
+                                                                "label": "内容",
+                                                                "type": "static"
+                                                            },
+                                                            {
+                                                                "name": "labels",
+                                                                "label": "标签组",
+                                                                "type": "static"
+                                                            },
+                                                            {
+                                                                "name": "quotes",
+                                                                "label": "引用情况",
+                                                                "type": "static"
+                                                            },
+                                                            {
+                                                                "label": "被引用情况",
+                                                                "name": "referenceds",
+                                                                "type": "static"
+                                                            },
+                                                            {
+                                                                "label": "创建时间",
+                                                                "name": "create_time",
+                                                                "type": "static"
+                                                            },
+                                                            {
+                                                                "label": "修改时间",
+                                                                "name": "update_time",
+                                                                "type": "static"
+                                                            }
+                                                        ]
+                                                    }
+                                                },
+                                                "id": "u:f4d99186dfa1"
+                                            },
+                                            {
+                                                "type": "button",
+                                                "label": "删除",
+                                                "actionType": "ajax",
+                                                "level": "link",
+                                                "className": "text-danger",
+                                                "confirmText": "确定要删除？",
+                                                "api": {
+                                                    "method": "post",
+                                                    "url": "/record"
+                                                },
+                                                "editorSetting": {
+                                                    "behavior": "delete"
+                                                },
+                                                "id": "u:af994b320404"
+                                            }
+                                        ],
+                                        "id": "u:7ae5ec1ec8ff"
                                     }
                                 ],
-                                series: [
+                                "bulkActions": [
                                     {
-                                        name: 'Les Miserables',
-                                        type: 'graph',
-                                        layout: 'none',
-                                        data: "${nodes}",
-                                        links: "${links}",
-                                        categories: "${categories}",
-                                        roam: true,
-                                        label: {
-                                            show: true,
-                                            position: 'right',
-                                            formatter: '{b}',
-                                            color: "inherit"
+                                        "type": "button",
+                                        "level": "danger",
+                                        "label": "批量删除",
+                                        "actionType": "ajax",
+                                        "confirmText": "确定要删除？",
+                                        "api": "/xxx/batch-delete",
+                                        "editorSetting": {
+                                            "behavior": "bulkDelete"
                                         },
-                                        labelLayout: {
-                                            hideOverlap: true
-                                        },
-                                        scaleLimit: {
-                                            min: 0.4,
-                                            max: 2
-                                        },
-                                        lineStyle: {
-                                            color: 'source',
-                                            curveness: 0.3
-                                        },
+                                        "id": "u:85a62cf0ced7"
                                     }
-                                ]
+                                ],
+                                "itemActions": [],
+                                "headerToolbar": [
+                                    {
+                                        "label": "新增",
+                                        "type": "button",
+                                        "actionType": "dialog",
+                                        "level": "primary",
+                                        "editorSetting": {
+                                            "behavior": "create"
+                                        },
+                                        "dialog": {
+                                            "title": "新增",
+                                            "body": {
+                                                "type": "form",
+                                                "api": {
+                                                    "method": "post",
+                                                    "url": "/record"
+                                                },
+                                                "body": [
+                                                    {
+                                                        "type": "input-text",
+                                                        "name": "id",
+                                                        "label": "ID"
+                                                    },
+                                                    {
+                                                        "type": "input-text",
+                                                        "name": "content",
+                                                        "label": "内容"
+                                                    },
+                                                    {
+                                                        "type": "input-text",
+                                                        "name": "labels",
+                                                        "label": "标签组"
+                                                    },
+                                                    {
+                                                        "type": "input-text",
+                                                        "name": "quotes",
+                                                        "label": "引用情况"
+                                                    },
+                                                    {
+                                                        "type": "input-text",
+                                                        "name": "referenceds",
+                                                        "label": "被引用情况"
+                                                    },
+                                                    {
+                                                        "type": "input-date",
+                                                        "name": "create_time",
+                                                        "label": "创建时间"
+                                                    },
+                                                    {
+                                                        "type": "input-date",
+                                                        "name": "update_time",
+                                                        "label": "修改时间"
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        "id": "u:54f7b9bb5dff"
+                                    },
+                                    "bulkActions"
+                                ],
+                                "id": "u:409cc08662cd"
                             }
-                        }
-                    }]
+                        ],
+                        "id": "u:63683c3d3018",
+                        "asideResizor": false,
+                        "pullRefresh": {
+                            "disabled": true
+                        },
+                        "aside": [],
+                        "toolbar": [],
+                        "regions": [
+                            "body"
+                        ]
+                    },
+                    // {
+                    //     type: 'form',
+                    //     mode: 'horizontal',
+                    //     api: '/saveFormerr?cc=sdfdsf',
+                    //     body: [
+                    //         {
+                    //             label: 'Name',
+                    //             type: 'input-text',
+                    //             name: 'name'
+                    //         },
+                    //         {
+                    //             label: 'Email',
+                    //             type: 'input-text',
+                    //             name: 'email'
+                    //         }
+                    //     ]
+                    // },
+                    // {
+                    //     "type": "page",
+                    //     "body": {
+                    //         "type": "chart",
+                    //         "api": "/amis/api/mock2/chart/chartData",
+                    //         "config": {
+                    //             tooltip: {},
+                    //             legend: [
+                    //                 {
+                    //                     data: "${ARRAYMAP(categories, item => item.name)}"
+                    //                 }
+                    //             ],
+                    //             series: [
+                    //                 {
+                    //                     name: 'Les Miserables',
+                    //                     type: 'graph',
+                    //                     layout: 'none',
+                    //                     data: "${nodes}",
+                    //                     links: "${links}",
+                    //                     categories: "${categories}",
+                    //                     roam: true,
+                    //                     label: {
+                    //                         show: true,
+                    //                         position: 'right',
+                    //                         formatter: '{b}',
+                    //                         color: "inherit"
+                    //                     },
+                    //                     labelLayout: {
+                    //                         hideOverlap: true
+                    //                     },
+                    //                     scaleLimit: {
+                    //                         min: 0.4,
+                    //                         max: 2
+                    //                     },
+                    //                     lineStyle: {
+                    //                         color: 'source',
+                    //                         curveness: 0.3
+                    //                     },
+                    //                 }
+                    //             ]
+                    //         }
+                    //     }
+                    // }
+                ]
             };
             let amisScoped = amis.embed('#root', amisJSON);
         })();

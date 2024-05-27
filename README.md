@@ -176,7 +176,8 @@ technology:
   - 记录/record:
     - id:str 用户自定义或者生成uuid
     - content:str markdown的内容
-    - quote:list[str] 引用的recordIds,会从content中解析出来
+    - quotes:list[str] 引用的recordIds,会从content中解析出来
+    - referenceds:list[str] 被引用的recordIds,会从content中解析出来
     - labels:list[label] 标签列表
     - create_time:date
     - update_time:date
