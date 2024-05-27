@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>菜鸟教程(runoob.com)</title>
+    <link rel="stylesheet" href="./amis/sdk.css" />
+    <link rel="stylesheet" href="./amis/helper.css" />
+    <link rel="stylesheet" href="./amis/iconfont.css" />
+</head>
+
+<body>
+    <div id="root" class="app-wrapper"></div>
+    <script src="./js/node.js"></script>
+    <script src="./amis/sdk.js"></script>
+    <script>
+        let datas = [];
+        let links = [];
+        let categories = [];
+        let size = 100;
+        for (let i = 0; i < size; i++) {
+            datas.push({ id: "" + i, name: "name-" + i, value: Math.random() * 1000 + 100, category: parseInt(Math.random() * 10) })
+            for (let ii = 0; ii < Math.random() * 50; ii++) {
+                links.push({ source: "" + i, target: "" + parseInt(Math.random() * size) })
+            }
+        }
+        for (let i = 0; i < 10; i++) {
+            categories.push({ name: 'A' + i })
+        }
+        let old = new Date();
+        console.log(old);
+        datas = new DataBuild().builds(datas, links);
+        console.log(datas);
+        let nodes = datas.map(v => {
+            return {
+                "id": v.data.id,
+                "name": v.data.name,
+                "symbolSize": v.size,
+                "x": v.pos.x,
+                "y": v.pos.y,
+                "value": v.data.value,
+                "category": v.data.category
+            }
+        })
+        console.log(nodes);
+        console.log(categories);
+        console.log(new Date());
+        console.log(old - new Date());
+    </script>
+    <script type="text/javascript">
+        (function () {
+            let amis = amisRequire('amis/embed');
+            // 通过替换下面这个配置来生成不同页面
+            let amisJSON = {
+                type: 'page',
+                body: [
+                    {
+                        "type": "page",
+                        "body": {
+                            "type": "chart",
+                            // "api": "/amis/api/mock2/chart/chartData",
+                            "config": {
+                                tooltip: {},
+                                legend: [
+                                    {
+                                        data: categories.map(a => a.name)
+                                    }
+                                ],
+                                series: [
+                                    {
+                                        name: 'Les Miserables',
+                                        type: 'graph',
+                                        layout: 'none',
+                                        data: nodes,
+                                        links: links,
+                                        categories: categories,
+                                        roam: true,
+                                        label: {
+                                            show: true,
+                                            position: 'right',
+                                            formatter: '{b}',
+                                            color: "inherit"
+                                        },
+                                        labelLayout: {
+                                            hideOverlap: true
+                                        },
+                                        scaleLimit: {
+                                            min: 0.2,
+                                            max: 10
+                                        },
+                                        lineStyle: {
+                                            color: 'source',
+                                            curveness: 0.3
+                                        },
+                                    }
+                                ]
+                            },
+                            "width": 1920,
+                            "height": 1080,
+                        }
+                    }]
+            };
+            let amisScoped = amis.embed('#root', amisJSON);
+        })();
+    </script>
+</body>
+
+</html>
