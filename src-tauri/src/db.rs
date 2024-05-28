@@ -12,7 +12,7 @@ use rbdc_sqlite::Driver;
 use tokio::sync::{Mutex, OnceCell};
 
 /// table
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize, Default)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize, Default, PartialEq, Eq)]
 pub struct Record {
     pub id: Option<String>,
     pub content: Option<String>,
@@ -82,17 +82,22 @@ pub struct DateLimit {
 }
 
 crud!(Record {});
-impl_select_page!(Record { select_page(record:Option<&Record>,create_time_limit:Option<&DateLimit>,update_time_limit:Option<&DateLimit>) => "
+impl_select_page!(Record { select_page(id:Option<String>,content:Option<String>,create_time_limit:Option<DateLimit>,update_time_limit:Option<DateLimit>) => "
 `where 1 = 1`
-if record != null:
-    if record.id != null && record.id != '':
-        ` and id like #{record.id}`
-    if record.content != null && record.content != '':
-        ` and content like #{record.content}`
-if create_time_limit != null && create_time_limit.start_time != null && create_time_limit.end_time != null:
-    ` and create_time between #{create_time_limit.start_time} and #{create_time_limit.end_time}`
-if update_time_limit != null && update_time_limit.start_time != null && update_time_limit.end_time != null:
-    ` and update_time between #{update_time_limit.start_time} and #{update_time_limit.end_time}`
+if id != null && id != '':
+    ` and id like #{id}`
+if content != null && content != '':
+    ` and content like #{content}`
+if create_time_limit != null:
+    if create_time_limit.start_time != null:
+        ` and create_time >= #{create_time_limit.start_time}`
+    if create_time_limit.end_time != null:
+        ` and create_time <= #{create_time_limit.end_time}`
+if update_time_limit != null:
+    if update_time_limit.start_time != null:
+        ` and update_time >= #{update_time_limit.start_time}`
+    if update_time_limit.end_time != null:
+        ` and update_time <= #{update_time_limit.end_time}`
 "});
 
 crud!(Label {});
@@ -158,67 +163,147 @@ pub async fn init() {
 mod tests {
 
     #[tokio::test]
-    async fn db_test1() {
-        use super::*;
-        use rbatis::rbdc::Uuid;
-        init().await;
-        let get = DB.get().unwrap().lock().await;
-        Record::insert(
-            &get.to_owned(),
-            &Record {
-                id: Some(Uuid::new().to_string()),
-                content: Some("content".to_string()),
-                create_time: Some(DateTime::now()),
-                update_time: Some(DateTime::now()),
-            },
-        )
-        .await
-        .unwrap();
-        println!(
-            "records 1 => {:?}",
-            Record::select_all(&get.to_owned()).await.unwrap()
-        );
-    }
-
-    #[tokio::test]
-    async fn db_test2() {
+    async fn db_test3() {
         use super::*;
         use rbatis::PageRequest;
 
         init().await;
         let db = DB.get().unwrap().lock().await;
-        println!(
-            "records 2 => {:?}",
-            Record::select_page(
-                &db.to_owned(),
-                &PageRequest::new(0, 10),
-                Some(&Record {
-                    id: None,
-                    content: Some("%c%".to_string()),
-                    create_time: None,
-                    update_time: None
-                }),
-                // Some(&DateLimit {
-                //     start_time: Some(
-                //         DateTime::parse(
-                //             "YYYY-MM-DD hh:mm:ss.000000",
-                //             "2024-05-19 19:19:12.8703204"
-                //         )
-                //         .unwrap()
-                //     ),
-                //     end_time: Some(
-                //         DateTime::parse(
-                //             "YYYY-MM-DD hh:mm:ss.000000",
-                //             "2024-05-23 19:19:12.8703204"
-                //         )
-                //         .unwrap()
-                //     ),
-                // }),
-                None,
-                None,
-            )
-            .await
-            .unwrap()
-        );
+
+        db.exec("delete from Record", vec![]).await.unwrap();
+
+        // Create test data
+        let record1 = Record {
+            id: Some("1".to_string()),
+            content: Some("content 1".to_string()),
+            create_time: Some(
+                DateTime::parse("YYYY-MM-DD hh:mm:ss.000000", "2024-05-01 19:19:12.8703204")
+                    .unwrap(),
+            ),
+            update_time: Some(
+                DateTime::parse("YYYY-MM-DD hh:mm:ss.000000", "2024-05-02 19:19:12.8703204")
+                    .unwrap(),
+            ),
+        };
+        Record::insert(&db.to_owned(), &record1).await.unwrap();
+
+        let record2 = Record {
+            id: Some("2".to_string()),
+            content: Some("content 2".to_string()),
+            create_time: Some(
+                DateTime::parse("YYYY-MM-DD hh:mm:ss.000000", "2024-05-10 19:19:12.8703204")
+                    .unwrap(),
+            ),
+            update_time: Some(
+                DateTime::parse("YYYY-MM-DD hh:mm:ss.000000", "2024-05-11 19:19:12.8703204")
+                    .unwrap(),
+            ),
+        };
+        Record::insert(&db.to_owned(), &record2).await.unwrap();
+
+        // Call the select_page method with different arguments to cover different code paths
+        let page_request = PageRequest::new(0, 10);
+        let date_limit = DateLimit {
+            start_time: Some(
+                DateTime::parse("YYYY-MM-DD hh:mm:ss.000000", "2024-05-09 19:19:12.8703204")
+                    .unwrap(),
+            ),
+            end_time: Some(
+                DateTime::parse("YYYY-MM-DD hh:mm:ss.000000", "2024-05-23 19:19:12.8703204")
+                    .unwrap(),
+            ),
+        };
+
+        // Test with id filter
+        let result1 = Record::select_page(
+            &db.to_owned(),
+            &page_request,
+            Some("1".to_string()),
+            None,
+            None,
+            None,
+        )
+        .await
+        .unwrap();
+        assert_eq!(result1.records.len(), 1);
+        assert_eq!(result1.records[0], record1);
+
+        // Test with content filter
+        let result2 = Record::select_page(
+            &db.to_owned(),
+            &page_request,
+            None,
+            Some("content 2".to_string()),
+            None,
+            None,
+        )
+        .await
+        .unwrap();
+        assert_eq!(result2.records.len(), 1);
+        assert_eq!(result2.records[0], record2);
+
+        // Test with create_time_limit filter
+        let result3 = Record::select_page(
+            &db.to_owned(),
+            &page_request,
+            None,
+            None,
+            Some(date_limit.clone()),
+            None,
+        )
+        .await
+        .unwrap();
+        assert_eq!(result3.records.len(), 1);
+        assert_eq!(result3.records[0], record2);
+
+        // Test with update_time_limit filter
+        let result4 = Record::select_page(
+            &db.to_owned(),
+            &page_request,
+            None,
+            None,
+            None,
+            Some(date_limit.clone()),
+        )
+        .await
+        .unwrap();
+        assert_eq!(result4.records.len(), 1);
+        assert_eq!(result4.records[0], record2);
+
+        // Test with update_time_limit filter2
+        let mut date_limit2 = date_limit.clone();
+        date_limit2.end_time = None;
+
+        let result5 = Record::select_page(
+            &db.to_owned(),
+            &page_request,
+            None,
+            None,
+            None,
+            Some(date_limit2),
+        )
+        .await
+        .unwrap();
+        assert_eq!(result5.records.len(), 1);
+        assert_eq!(result5.records[0], record2);
+
+        let result6 = Record::select_page(
+            &db.to_owned(),
+            &page_request,
+            None,
+            None,
+            None,
+            Some(DateLimit {
+                start_time: Some(
+                    DateTime::parse("YYYY-MM-DD hh:mm:ss.000000", "2024-05-01 01:19:12.8703204")
+                        .unwrap(),
+                ),
+                end_time: None,
+            }),
+        )
+        .await
+        .unwrap();
+        assert_eq!(result6.records.len(), 2);
+        assert_eq!(result6.records, vec![record1, record2]);
     }
 }

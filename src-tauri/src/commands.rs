@@ -24,18 +24,36 @@ pub struct RecordVO {
     update_time: Option<DateTime>,
 }
 
+impl RecordVO {
+    fn get_id(&self) -> Option<String> {
+        if self.id.is_some() {
+            Some(format!("%{}%", self.id.clone().unwrap()))
+        } else {
+            None
+        }
+    }
+    fn get_content(&self) -> Option<String> {
+        if self.id.is_some() {
+            Some(format!("%{}%", self.content.clone().unwrap()))
+        } else {
+            None
+        }
+    }
+}
+
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize, Default)]
-pub struct RecordPage {
-    page: Option<String>,
-    #[serde(rename = "perPage")]
-    per_page: Option<String>,
-    id: Option<String>,
-    content: Option<String>,
-    quotes: Option<Vec<String>>,
-    referenceds: Option<Vec<String>>,
-    labels: Option<Vec<String>>,
-    create_time: Option<String>,
-    update_time: Option<String>,
+pub struct PageReq<T> {
+    page: Option<u64>,
+    per_page: Option<u64>,
+    create_time: Option<DateLimit>,
+    update_time: Option<DateLimit>,
+    data: Option<T>,
+}
+
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize, Default)]
+pub struct PageRes<T> {
+    items: Vec<T>,
+    total: u64,
 }
 
 #[tauri::command]
@@ -45,25 +63,52 @@ pub async fn get_default_config() -> clap::Cli {
 }
 
 #[tauri::command]
-pub async fn get_record(req: Req<RecordPage, Value>) -> Option<Vec<RecordVO>> {
+pub async fn post_record(req: Req<Value, PageReq<RecordVO>>) -> Option<PageRes<RecordVO>> {
     info!("req => {:?}", req);
+    let bodys = req.bodys.unwrap();
+    let (mut get_id, mut get_content) = (None, None);
+    if bodys.data.is_some() {
+        get_id = bodys.data.as_ref().unwrap().get_id();
+        get_content = bodys.data.unwrap().get_content();
+    }
+    let mut select_page = None;
     {
         let lock = DB.get().unwrap().lock().await;
-        let select_page = Record::select_page(
-            &lock.to_owned(),
-            &PageRequest::new(0, 2),
-            Some(&Record {
-                id: Some("%t%".to_string()),
-                content: Some("".to_string()),
-                create_time: None,
-                update_time: None,
-            }),
-            None,
-            None,
-        )
-        .await
-        .unwrap();
-        info!("{:?}", select_page);
+        select_page = Some(
+            Record::select_page(
+                &lock.to_owned(),
+                &PageRequest::new(bodys.page.unwrap(), bodys.per_page.unwrap()),
+                get_id,
+                get_content,
+                bodys.create_time,
+                bodys.update_time,
+            )
+            .await
+            .unwrap(),
+        );
+        info!("select_page {:?}", select_page);
     }
-    None
+    Some(PageRes {
+        items: select_page
+            .clone()
+            .unwrap()
+            .records
+            .iter()
+            .map(|v| {
+                let quotes = Vec::new();
+                let referenceds = Vec::new();
+                let labels = Vec::new();
+                RecordVO {
+                    id: v.id.clone(),
+                    content: v.content.clone(),
+                    quotes: Some(quotes),
+                    referenceds: Some(referenceds),
+                    labels: Some(labels),
+                    create_time: v.create_time.clone(),
+                    update_time: v.update_time.clone(),
+                }
+            })
+            .collect(),
+        total: select_page.unwrap().total,
+    })
 }

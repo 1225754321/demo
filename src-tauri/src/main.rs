@@ -34,7 +34,7 @@ async fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             commands::get_default_config,
-            commands::get_record,
+            commands::post_record,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

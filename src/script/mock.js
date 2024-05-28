@@ -44,7 +44,11 @@ ah.proxy({
                 config: options,
                 status: 200,
                 // headers: { 'content-type': 'text/text' },
-                response: r
+                response: {
+                    status: 0,
+                    msg: "ok",
+                    data: r
+                }
             });
         }).catch(e => {
             console.log("tauri_util.invoke.err => ", e);
@@ -52,7 +56,11 @@ ah.proxy({
                 config: options,
                 status: 200,
                 // headers: { 'content-type': 'text/text' },
-                response: e
+                response: {
+                    status: -1,
+                    msg: "err",
+                    data: r
+                }
             });
         });
     },
