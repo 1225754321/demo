@@ -34,8 +34,8 @@ pub struct RecordPage {
     quotes: Option<Vec<String>>,
     referenceds: Option<Vec<String>>,
     labels: Option<Vec<String>>,
-    create_time: Option<DateLimit>,
-    update_time: Option<DateLimit>,
+    create_time: Option<String>,
+    update_time: Option<String>,
 }
 
 #[tauri::command]
