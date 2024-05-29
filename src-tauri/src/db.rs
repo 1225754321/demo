@@ -1,14 +1,16 @@
 use std::sync::Arc;
 
 use log::info;
-//#[macro_use] define in 'root crate' or 'mod.rs' or 'main.rs'
 use rbatis::{
-    crud, impl_select, impl_select_page,
+    crud,
+    executor::Executor,
+    impl_select_page, impled, py_sql,
     rbdc::datetime::DateTime,
     table_sync::{self, ColumMapper},
-    RBatis,
+    Error, RBatis,
 };
 use rbdc_sqlite::Driver;
+use rbs::Value;
 use tokio::sync::{Mutex, OnceCell};
 
 /// table
@@ -82,12 +84,14 @@ pub struct DateLimit {
 }
 
 crud!(Record {});
-impl_select_page!(Record { select_page(id:Option<String>,content:Option<String>,create_time_limit:Option<DateLimit>,update_time_limit:Option<DateLimit>) => "
+impl_select_page!(Record { select_page(id:Option<String>,content:Option<String>,record_ids:Option<Vec<String>>,create_time_limit:Option<DateLimit>,update_time_limit:Option<DateLimit>) => "
 `where 1 = 1`
 if id != null && id != '':
-    ` and id like #{id}`
+    ` and id like '%'||#{id}||'%'`
 if content != null && content != '':
-    ` and content like #{content}`
+    ` and content like '%'||#{content}||'%'`
+if record_ids != null && record_ids.len != 0:
+    ` and id in #{record_ids}`
 if create_time_limit != null:
     if create_time_limit.start_time != null:
         ` and create_time >= #{create_time_limit.start_time}`
@@ -99,20 +103,61 @@ if update_time_limit != null:
     if update_time_limit.end_time != null:
         ` and update_time <= #{update_time_limit.end_time}`
 "});
-
 crud!(Label {});
+impl Label {
+    #[py_sql(
+        "`select * as count from label where 1=1 `
+            if name != null && name != '':
+                ` and name like '%'||#{name}||'%' `"
+    )]
+    pub async fn like(rb: &dyn Executor, name: Option<String>) -> Result<Vec<Label>, Error> {
+        impled!()
+    }
+    pub async fn likes(rb: &dyn Executor, label: Option<String>) -> Option<Vec<String>> {
+        let lals = Label::like(rb, label.clone())
+            .await
+            .unwrap()
+            .into_iter()
+            .map(|v| v.na);
+        if label.is_none() && label.clone().unwrap().len() == 0 {
+            let rls = RecordLabels::like(rb, label.clone()).await.unwrap();
+            if rls.len() > 10 {
+                return Some(rls[0..10].into_iter().map(|v| v.0.clone()).collect());
+            }
+        }
+        None
+    }
+}
 crud!(LabelRelationship {});
 crud!(RecordLabels {});
+impl RecordLabels {
+    #[py_sql(
+        "`select label, count(label) as count from record_labels where 1=1 `
+            if label != null && label != '':
+                ` and label like '%'||#{label}||'%' `
+         ` group by label order by count desc`"
+    )]
+    pub async fn like(
+        rb: &dyn Executor,
+        label: Option<String>,
+    ) -> Result<Vec<(String, usize)>, Error> {
+        impled!()
+    }
+}
 crud!(RecordQuote {});
-impl_select!(RecordQuote{select_rq(qs:Option<Vec<String>>,rc:Option<Vec<String>>)=>"
-`where 1 = 1`
-if qs != null:
-    ` and quote in #{rs}`
-if rs != null:
-    ` and referenced in #{qs}`
-"});
 crud!(RecordFile {});
 crud!(File {});
+
+fn pascal_to_camel(pascal_str: &str) -> String {
+    let mut camel_str = String::new();
+    for (i, ch) in pascal_str.chars().enumerate() {
+        if i != 0 && ch.is_uppercase() {
+            camel_str.push('_');
+        }
+        camel_str.push(ch.to_lowercase().next().unwrap());
+    }
+    camel_str
+}
 
 macro_rules! sync_tables {
     ($r:tt,$m:tt, $( $x:ident ),* ) => {
@@ -121,7 +166,7 @@ macro_rules! sync_tables {
                 &$r.acquire().await.unwrap(),
                 $m.clone(),
                 &$x::default(),
-                stringify!($x),
+                &pascal_to_camel(stringify!($x)),
             )
             .await
             .unwrap();
@@ -222,6 +267,7 @@ mod tests {
             None,
             None,
             None,
+            None,
         )
         .await
         .unwrap();
@@ -236,6 +282,7 @@ mod tests {
             Some("content 2".to_string()),
             None,
             None,
+            None,
         )
         .await
         .unwrap();
@@ -246,6 +293,7 @@ mod tests {
         let result3 = Record::select_page(
             &db.to_owned(),
             &page_request,
+            None,
             None,
             None,
             Some(date_limit.clone()),
@@ -260,6 +308,7 @@ mod tests {
         let result4 = Record::select_page(
             &db.to_owned(),
             &page_request,
+            None,
             None,
             None,
             None,
@@ -280,6 +329,7 @@ mod tests {
             None,
             None,
             None,
+            None,
             Some(date_limit2),
         )
         .await
@@ -290,6 +340,7 @@ mod tests {
         let result6 = Record::select_page(
             &db.to_owned(),
             &page_request,
+            None,
             None,
             None,
             None,
@@ -304,6 +355,20 @@ mod tests {
         .await
         .unwrap();
         assert_eq!(result6.records.len(), 2);
-        assert_eq!(result6.records, vec![record1, record2]);
+        assert_eq!(result6.records, vec![record1.clone(), record2.clone()]);
+
+        let result7 = Record::select_page(
+            &db.to_owned(),
+            &page_request,
+            None,
+            None,
+            Some(vec!["1".to_string(), "2".to_string()]),
+            None,
+            None,
+        )
+        .await
+        .unwrap();
+        assert_eq!(result7.records.len(), 2);
+        assert_eq!(result7.records, vec![record1, record2]);
     }
 }

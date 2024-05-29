@@ -58,8 +58,7 @@ ah.proxy({
                 // headers: { 'content-type': 'text/text' },
                 response: {
                     status: -1,
-                    msg: "err",
-                    data: r
+                    msg: e,
                 }
             });
         });
