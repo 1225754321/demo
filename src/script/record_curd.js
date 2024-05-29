@@ -7,7 +7,7 @@ var record_curd = {
             "syncLocation": false,
             "api": {
                 "method": "post",
-                "url": "/record",
+                "url": "/records",
                 "requestAdaptor": (r, c) => {
                     console.log(c);
                     ct = undefined
@@ -31,6 +31,8 @@ var record_curd = {
                         data: {
                             ...r.data,
                             "per_page": c.perPage,
+                            "order_by": c.orderBy,
+                            "order_dir": c.orderDir,
                             "data": {
                                 "id": c.id,
                                 "content": c.content,
@@ -48,11 +50,13 @@ var record_curd = {
             //     "columnsNum": 2,
             //     "showBtnToolbar": false
             // },
+            "headerToolbar": ["bulkActions", "pagination"],
             "columns": [
                 {
                     "name": "id",
                     "label": "ID",
                     "type": "text",
+                    "sortable": true,
                     "searchable": true,
                     "id": "u:292727c6920a"
                 },
@@ -84,6 +88,7 @@ var record_curd = {
                     "type": "text",
                     "name": "quotes",
                     "label": "引用情况",
+                    "toggled": false,
                     "searchable": {
                         "type": "input-tag",
                         "label": "引用",
@@ -101,6 +106,7 @@ var record_curd = {
                     "type": "text",
                     "label": "被引用情况",
                     "name": "referenceds",
+                    "toggled": false,
                     "searchable": {
                         "type": "input-tag",
                         "label": "引用",
@@ -117,6 +123,8 @@ var record_curd = {
                 {
                     "type": "date",
                     "label": "创建时间",
+                    "toggled": false,
+                    "sortable": true,
                     "name": "create_time",
                     "searchable": {
                         "type": "input-date-range",
@@ -127,6 +135,8 @@ var record_curd = {
                 {
                     "type": "date",
                     "label": "修改时间",
+                    "toggled": false,
+                    "sortable": true,
                     "name": "update_time",
                     "searchable": true,
                     "id": "u:ae3325cdede3"
@@ -292,9 +302,15 @@ var record_curd = {
                         "size": "full",
                         "body": {
                             "type": "form",
+                            "id": "uuid_add",
                             "api": {
                                 "method": "post",
                                 "url": "/record"
+                            },
+                            data: {
+                                id: "",
+                                content: "",
+                                labels: "",
                             },
                             "body": [
                                 {
@@ -308,22 +324,55 @@ var record_curd = {
                                     "label": "内容",
                                     "type": "editor",
                                     "name": "content",
+                                    "required": true,
                                     "language": "markdown"
                                 },
                                 {
-                                    "type": "input-text",
+                                    "name": "id",
+                                    "label": "ID",
+                                    "required": true,
+                                    "clearable": true,
+                                    "addOn": {
+                                        "type": "button",
+                                        "label": "随机生成",
+                                        "actionType": "custom",
+                                        "onClick": (event, props) => {
+                                            console.log(props);
+                                            console.log(event);
+                                            console.log(props.onAction(event, {
+                                                "actionType": "setValue",
+                                                "componentId": "uuid_add",
+                                                "args": {
+                                                    "value": {
+                                                        id: "dsadsadasdsad",
+                                                        content: "${content}",
+                                                        labels: "${labels}",
+                                                    }
+                                                }
+                                            }));
+                                        }
+                                    },
+                                    "type": "input-text"
+                                },
+                                {
+                                    "type": "select",
                                     "name": "labels",
+                                    "required": true,
+                                    "multiple": true,
+                                    "clearable": true,
+                                    "autoComplete": {
+                                        "method": "post",
+                                        "url": "/labels",
+                                        "requestAdaptor": (r, c) => {
+                                            console.log(r);
+                                            console.log(c);
+                                            return {
+                                                ...r,
+                                                data: "\"" + c.term + "\""
+                                            };
+                                        }
+                                    },
                                     "label": "标签组"
-                                },
-                                {
-                                    "type": "input-text",
-                                    "name": "quotes",
-                                    "label": "引用情况"
-                                },
-                                {
-                                    "type": "input-text",
-                                    "name": "referenceds",
-                                    "label": "被引用情况"
                                 },
                             ]
                         }

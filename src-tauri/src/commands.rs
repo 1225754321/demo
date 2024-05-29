@@ -30,6 +30,8 @@ pub struct RecordVO {
 pub struct PageReq<T> {
     page: Option<u64>,
     per_page: Option<u64>,
+    order_by: Option<String>,
+    order_dir: Option<String>,
     create_time: Option<DateLimit>,
     update_time: Option<DateLimit>,
     data: Option<T>,
@@ -48,7 +50,7 @@ pub async fn get_default_config() -> clap::Cli {
 }
 
 #[tauri::command]
-pub async fn post_record(req: Req<Value, PageReq<RecordVO>>) -> Option<PageRes<RecordVO>> {
+pub async fn post_records(req: Req<Value, PageReq<RecordVO>>) -> Option<PageRes<RecordVO>> {
     info!("req => {:?}", req);
     let bodys = req.bodys.unwrap();
     let (mut get_id, mut get_content) = (None, None);
@@ -120,6 +122,8 @@ pub async fn post_record(req: Req<Value, PageReq<RecordVO>>) -> Option<PageRes<R
                     get_id,
                     get_content,
                     record_ids,
+                    bodys.order_by,
+                    bodys.order_dir,
                     bodys.create_time,
                     bodys.update_time,
                 )
@@ -214,10 +218,16 @@ pub async fn post_record(req: Req<Value, PageReq<RecordVO>>) -> Option<PageRes<R
 }
 
 #[tauri::command]
-pub async fn post_label(req: Req<Value, String>) -> Option<Vec<String>> {
+pub async fn post_labels(req: Req<Value, String>) -> Option<Vec<String>> {
     info!("post_label {:?}", req);
+    let labels;
     {
-        let lock = clap::CLI.get().unwrap().lock().await;
+        let lock = DB.get().unwrap().lock().await.to_owned();
+        labels = Label::likes(&lock, req.bodys.clone()).await;
     }
-    None
+    let mut res = labels.unwrap_or_default();
+    if req.bodys.is_some() && !req.bodys.clone().unwrap().trim().is_empty() {
+        res.push(req.bodys.unwrap().trim().to_string());
+    }
+    Some(res)
 }

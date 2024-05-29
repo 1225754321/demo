@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::HashSet, sync::Arc};
 
 use log::info;
 use rbatis::{
@@ -10,7 +10,6 @@ use rbatis::{
     Error, RBatis,
 };
 use rbdc_sqlite::Driver;
-use rbs::Value;
 use tokio::sync::{Mutex, OnceCell};
 
 /// table
@@ -25,18 +24,7 @@ pub struct Record {
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize, Default)]
 pub struct Label {
     pub id: Option<String>,
-    pub name: Option<String>,
-    pub path: Option<String>,
     pub describe: Option<String>,
-    pub create_time: Option<DateTime>,
-    pub update_time: Option<DateTime>,
-}
-
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize, Default)]
-pub struct LabelRelationship {
-    pub id: Option<String>,
-    pub parent: Option<String>,
-    pub child: Option<String>,
     pub create_time: Option<DateTime>,
     pub update_time: Option<DateTime>,
 }
@@ -84,7 +72,8 @@ pub struct DateLimit {
 }
 
 crud!(Record {});
-impl_select_page!(Record { select_page(id:Option<String>,content:Option<String>,record_ids:Option<Vec<String>>,create_time_limit:Option<DateLimit>,update_time_limit:Option<DateLimit>) => "
+impl_select_page!(Record { select_page(
+    id:Option<String>,content:Option<String>,record_ids:Option<Vec<String>>,order_by:Option<String>,order_dir:Option<String>,create_time_limit:Option<DateLimit>,update_time_limit:Option<DateLimit>) => "
 `where 1 = 1`
 if id != null && id != '':
     ` and id like '%'||#{id}||'%'`
@@ -102,33 +91,53 @@ if update_time_limit != null:
         ` and update_time >= #{update_time_limit.start_time}`
     if update_time_limit.end_time != null:
         ` and update_time <= #{update_time_limit.end_time}`
+if order_by != null && order_by != '' && order_dir != null && order_dir != '':
+    ` order by ${order_by} ${order_dir}`
 "});
 crud!(Label {});
 impl Label {
     #[py_sql(
         "`select * as count from label where 1=1 `
-            if name != null && name != '':
-                ` and name like '%'||#{name}||'%' `"
+            if id != null && id != '':
+                ` and id like '%'||#{id}||'%' `"
     )]
-    pub async fn like(rb: &dyn Executor, name: Option<String>) -> Result<Vec<Label>, Error> {
+    pub async fn like(rb: &dyn Executor, id: Option<String>) -> Result<Vec<Label>, Error> {
         impled!()
     }
-    pub async fn likes(rb: &dyn Executor, label: Option<String>) -> Option<Vec<String>> {
-        let lals = Label::like(rb, label.clone())
+    pub async fn likes(rb: &dyn Executor, id: Option<String>) -> Option<Vec<String>> {
+        let ids: Vec<String> = Label::like(rb, id.clone())
             .await
-            .unwrap()
+            .unwrap_or_default()
             .into_iter()
-            .map(|v| v.na);
-        if label.is_none() && label.clone().unwrap().len() == 0 {
-            let rls = RecordLabels::like(rb, label.clone()).await.unwrap();
-            if rls.len() > 10 {
-                return Some(rls[0..10].into_iter().map(|v| v.0.clone()).collect());
+            .map(|v| v.id.unwrap())
+            .collect();
+        let rls = RecordLabels::label_like(rb, id.clone())
+            .await
+            .unwrap_or_default();
+        let mut rl_ids = rls
+            .into_iter()
+            .map(|v| v.0.clone())
+            .collect::<HashSet<String>>();
+        if id.is_none() || id.clone().unwrap().trim().is_empty() {
+            for id in ids.iter() {
+                if rl_ids.len() >= 10 {
+                    break;
+                }
+                rl_ids.insert(id.to_string());
+            }
+        } else {
+            for id in ids.iter() {
+                rl_ids.insert(id.to_string());
             }
         }
-        None
+
+        if id.is_none() && rl_ids.len() >= 10 {
+            Some(rl_ids.into_iter().collect::<Vec<String>>()[0..10].to_vec())
+        } else {
+            Some(rl_ids.into_iter().collect())
+        }
     }
 }
-crud!(LabelRelationship {});
 crud!(RecordLabels {});
 impl RecordLabels {
     #[py_sql(
@@ -137,7 +146,7 @@ impl RecordLabels {
                 ` and label like '%'||#{label}||'%' `
          ` group by label order by count desc`"
     )]
-    pub async fn like(
+    pub async fn label_like(
         rb: &dyn Executor,
         label: Option<String>,
     ) -> Result<Vec<(String, usize)>, Error> {
@@ -193,7 +202,6 @@ pub async fn init() {
         mapper,
         Record,
         Label,
-        LabelRelationship,
         RecordLabels,
         RecordQuote,
         RecordFile,
@@ -268,6 +276,8 @@ mod tests {
             None,
             None,
             None,
+            None,
+            None,
         )
         .await
         .unwrap();
@@ -280,6 +290,8 @@ mod tests {
             &page_request,
             None,
             Some("content 2".to_string()),
+            None,
+            None,
             None,
             None,
             None,
@@ -296,6 +308,8 @@ mod tests {
             None,
             None,
             None,
+            None,
+            None,
             Some(date_limit.clone()),
             None,
         )
@@ -308,6 +322,8 @@ mod tests {
         let result4 = Record::select_page(
             &db.to_owned(),
             &page_request,
+            None,
+            None,
             None,
             None,
             None,
@@ -330,6 +346,8 @@ mod tests {
             None,
             None,
             None,
+            None,
+            None,
             Some(date_limit2),
         )
         .await
@@ -340,6 +358,8 @@ mod tests {
         let result6 = Record::select_page(
             &db.to_owned(),
             &page_request,
+            None,
+            None,
             None,
             None,
             None,
@@ -363,6 +383,8 @@ mod tests {
             None,
             None,
             Some(vec!["1".to_string(), "2".to_string()]),
+            None,
+            None,
             None,
             None,
         )
