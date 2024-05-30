@@ -35,6 +35,7 @@ async fn main() {
         .invoke_handler(tauri::generate_handler![
             commands::get_default_config,
             commands::post_records,
+            commands::post_record,
             commands::post_labels,
         ])
         .run(tauri::generate_context!())

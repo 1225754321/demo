@@ -1835,6 +1835,7 @@ dependencies = [
  "rbatis",
  "rbdc-sqlite",
  "rbs",
+ "regex",
  "serde",
  "serde_json",
  "tauri",

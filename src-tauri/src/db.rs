@@ -5,11 +5,12 @@ use rbatis::{
     crud,
     executor::Executor,
     impl_select_page, impled, py_sql,
-    rbdc::datetime::DateTime,
+    rbdc::{datetime::DateTime, db::ExecResult},
     table_sync::{self, ColumMapper},
     Error, RBatis,
 };
 use rbdc_sqlite::Driver;
+use rbs::to_value;
 use tokio::sync::{Mutex, OnceCell};
 
 /// table
@@ -31,7 +32,6 @@ pub struct Label {
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize, Default)]
 pub struct RecordLabels {
-    pub id: Option<String>,
     pub record: Option<String>,
     pub label: Option<String>,
     pub create_time: Option<DateTime>,
@@ -40,7 +40,6 @@ pub struct RecordLabels {
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize, Default)]
 pub struct RecordQuote {
-    pub id: Option<String>,
     pub quote: Option<String>,
     pub referenced: Option<String>,
     pub create_time: Option<DateTime>,
@@ -104,6 +103,28 @@ impl Label {
     pub async fn like(rb: &dyn Executor, id: Option<String>) -> Result<Vec<Label>, Error> {
         impled!()
     }
+    // #[py_sql(
+    //     "`insert into label values `
+    //     for i,v in ids:
+    //         ` (${v},'',date('now'),date('now')) `
+    //         if i != ids.len - 1:
+    //             `,`
+    //     "
+    // )]
+    pub async fn adds(rb: &dyn Executor, ids: Option<Vec<String>>) -> Result<ExecResult, Error> {
+        let mut sql = "insert into label values ".to_string();
+        let mut args = Vec::new();
+        let len = ids.clone().unwrap().len() - 1;
+        for (i, ele) in ids.unwrap().into_iter().enumerate() {
+            sql.push_str(" (?, '', date('now'), date('now') ) ");
+            args.push(to_value!(ele.clone()));
+            if i != len {
+                sql.push(',');
+            }
+        }
+        rb.exec(&sql, args).await
+    }
+
     pub async fn likes(rb: &dyn Executor, id: Option<String>) -> Option<Vec<String>> {
         let ids: Vec<String> = Label::like(rb, id.clone())
             .await
@@ -152,8 +173,49 @@ impl RecordLabels {
     ) -> Result<Vec<(String, usize)>, Error> {
         impled!()
     }
+
+    pub async fn add_record_labels(
+        rb: &dyn Executor,
+        record: Option<String>,
+        labels: Option<Vec<String>>,
+    ) -> Result<ExecResult, Error> {
+        let mut sql = "insert into record_labels values ".to_string();
+        let mut args = Vec::new();
+        let record = record.unwrap();
+        let len = labels.clone().unwrap().len() - 1;
+        for (i, ele) in labels.unwrap().into_iter().enumerate() {
+            sql.push_str(" (?, ?, date('now'), date('now') ) ");
+            args.push(to_value!(record.clone()));
+            args.push(to_value!(ele.clone()));
+            if i != len {
+                sql.push(',');
+            }
+        }
+        rb.exec(&sql, args).await
+    }
 }
 crud!(RecordQuote {});
+impl RecordQuote {
+    pub async fn add_record_quotes(
+        rb: &dyn Executor,
+        record: Option<String>,
+        quotes: Option<Vec<String>>,
+    ) -> Result<ExecResult, Error> {
+        let mut sql = "insert into record_quote values ".to_string();
+        let mut args = Vec::new();
+        let record = record.unwrap();
+        let len = quotes.clone().unwrap().len() - 1;
+        for (i, ele) in quotes.unwrap().into_iter().enumerate() {
+            sql.push_str(" (?, ?, date('now'), date('now') ) ");
+            args.push(to_value!(record.clone()));
+            args.push(to_value!(ele.clone()));
+            if i != len {
+                sql.push(',');
+            }
+        }
+        rb.exec(&sql, args).await
+    }
+}
 crud!(RecordFile {});
 crud!(File {});
 

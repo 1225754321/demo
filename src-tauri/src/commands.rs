@@ -4,8 +4,9 @@ use crate::{
     clap,
     db::{DateLimit, Label, Record, RecordLabels, RecordQuote, DB},
 };
-use log::info;
+use log::{error, info};
 use rbatis::{rbdc::DateTime, Page, PageRequest};
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -230,4 +231,95 @@ pub async fn post_labels(req: Req<Value, String>) -> Option<Vec<String>> {
         res.push(req.bodys.unwrap().trim().to_string());
     }
     Some(res)
+}
+
+#[tauri::command]
+pub async fn post_record(req: Req<Value, RecordVO>) -> Result<(), &'static str> {
+    info!("post_record {:?}", req);
+    let bodys = req.bodys.unwrap();
+    {
+        let mut lock = DB
+            .get()
+            .unwrap()
+            .lock()
+            .await
+            .to_owned()
+            .acquire_begin()
+            .await
+            .unwrap()
+            .defer_async(|mut tx| async move {
+                if !tx.done {
+                    tx.rollback().await.unwrap_or_default();
+                    error!("tx rollback success!");
+                } else {
+                    info!("don't need rollback!");
+                }
+            });
+        if Record::select_by_column(&lock, "id", bodys.id.clone().unwrap())
+            .await
+            .unwrap()
+            .len()
+            > 0
+        {
+            return Err("该id已被使用!");
+        };
+        let in_labels: Vec<String> =
+            Label::select_in_column(&lock, "id", &bodys.labels.clone().unwrap())
+                .await
+                .unwrap()
+                .into_iter()
+                .map(|v| v.id.unwrap())
+                .collect();
+        let not_in_labels: Vec<String> = bodys
+            .labels
+            .unwrap()
+            .into_iter()
+            .filter(|v| !in_labels.contains(v))
+            .collect();
+        if let Err(e) = Label::adds(&lock, Some(not_in_labels.clone())).await {
+            error!("adds {}", e);
+            return Err("标签添加失败!");
+        }
+        if let Err(e) = RecordLabels::add_record_labels(
+            &lock,
+            Some(bodys.id.clone().unwrap()),
+            Some(not_in_labels),
+        )
+        .await
+        {
+            error!("add_record_labels {}", e);
+            return Err("标签引用关系添加失败!");
+        }
+        let reg = Regex::new(r"#R{\.+?}").unwrap();
+        let mut quotes = HashSet::new();
+        for mat in reg.find_iter(&bodys.content.clone().unwrap()) {
+            quotes.insert(mat.as_str().to_string());
+        }
+        if let Err(e) = RecordQuote::add_record_quotes(
+            &lock,
+            Some(bodys.id.clone().unwrap()),
+            Some(quotes.into_iter().collect()),
+        )
+        .await
+        {
+            error!("add_record_quotes {}", e);
+            return Err("记录引用关系添加失败!");
+        }
+        if let Err(e) = Record::insert(
+            &lock,
+            &Record {
+                id: bodys.id,
+                content: bodys.content,
+                create_time: Some(DateTime::now()),
+                update_time: Some(DateTime::now()),
+            },
+        )
+        .await
+        {
+            error!("insert {}", e);
+            return Err("记录数据添加失败!");
+        }
+        lock.commit().await.unwrap_or_default();
+    }
+    Ok(())
 }
