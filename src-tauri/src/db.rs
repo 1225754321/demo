@@ -96,22 +96,18 @@ if order_by != null && order_by != '' && order_dir != null && order_dir != '':
 crud!(Label {});
 impl Label {
     #[py_sql(
-        "`select * as count from label where 1=1 `
+        "`select * from label where 1=1 `
             if id != null && id != '':
                 ` and id like '%'||#{id}||'%' `"
     )]
     pub async fn like(rb: &dyn Executor, id: Option<String>) -> Result<Vec<Label>, Error> {
         impled!()
     }
-    // #[py_sql(
-    //     "`insert into label values `
-    //     for i,v in ids:
-    //         ` (${v},'',date('now'),date('now')) `
-    //         if i != ids.len - 1:
-    //             `,`
-    //     "
-    // )]
+
     pub async fn adds(rb: &dyn Executor, ids: Option<Vec<String>>) -> Result<ExecResult, Error> {
+        if ids.is_none() || ids.clone().unwrap().is_empty() {
+            return Ok(ExecResult::default());
+        }
         let mut sql = "insert into label values ".to_string();
         let mut args = Vec::new();
         let len = ids.clone().unwrap().len() - 1;
@@ -132,6 +128,7 @@ impl Label {
             .into_iter()
             .map(|v| v.id.unwrap())
             .collect();
+        info!("ids => {:#?}", ids);
         let rls = RecordLabels::label_like(rb, id.clone())
             .await
             .unwrap_or_default();
@@ -179,6 +176,9 @@ impl RecordLabels {
         record: Option<String>,
         labels: Option<Vec<String>>,
     ) -> Result<ExecResult, Error> {
+        if labels.is_none() || labels.clone().unwrap().is_empty() {
+            return Ok(ExecResult::default());
+        }
         let mut sql = "insert into record_labels values ".to_string();
         let mut args = Vec::new();
         let record = record.unwrap();
@@ -201,6 +201,9 @@ impl RecordQuote {
         record: Option<String>,
         quotes: Option<Vec<String>>,
     ) -> Result<ExecResult, Error> {
+        if quotes.is_none() || quotes.clone().unwrap().is_empty() {
+            return Ok(ExecResult::default());
+        }
         let mut sql = "insert into record_quote values ".to_string();
         let mut args = Vec::new();
         let record = record.unwrap();

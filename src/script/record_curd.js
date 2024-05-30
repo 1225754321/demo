@@ -68,19 +68,13 @@ var record_curd = {
                     "id": "u:cef0b36e020b"
                 },
                 {
-                    "type": "text",
+                    "type": "each",
                     "name": "labels",
                     "label": "标签组",
-                    "searchable": {
-                        "type": "input-tag",
-                        "label": "标签组",
-                        "placeholder": "请选择标签",
-                        "options": [
-                            "Aaron Rodgers",
-                            "Tom Brady",
-                            "Charlse Woodson",
-                            "Aaron Jones"
-                        ]
+                    "items": {
+                        "type": "tag",
+                        "value": "${item}",
+                        "color": "processing"
                     },
                     "id": "u:cf20988feb18"
                 },
@@ -305,7 +299,18 @@ var record_curd = {
                             "id": "uuid_add",
                             "api": {
                                 "method": "post",
-                                "url": "/record"
+                                "url": "/record",
+                                "requestAdaptor": (r, c) => {
+                                    console.log(c);
+                                    return {
+                                        ...r,
+                                        data: {
+                                            "id": c.id,
+                                            "content": c.content,
+                                            "labels": c.labels ? c.labels.split(",") : [],
+                                        }
+                                    };
+                                }
                             },
                             data: {
                                 id: "",
@@ -336,20 +341,20 @@ var record_curd = {
                                         "type": "button",
                                         "label": "随机生成",
                                         "actionType": "custom",
-                                        "onClick": (event, props) => {
-                                            console.log(props);
-                                            console.log(event);
-                                            console.log(props.onAction(event, {
-                                                "actionType": "setValue",
-                                                "componentId": "uuid_add",
-                                                "args": {
-                                                    "value": {
-                                                        id: "dsadsadasdsad",
-                                                        content: "${content}",
-                                                        labels: "${labels}",
+                                        "onEvent": {
+                                            "click": {
+                                                "actions": [
+                                                    {
+                                                        "actionType": "setValue",
+                                                        "componentId": "uuid_add",
+                                                        "args": {
+                                                            "value": {
+                                                                id: "${UUID()}"
+                                                            }
+                                                        }
                                                     }
-                                                }
-                                            }));
+                                                ]
+                                            }
                                         }
                                     },
                                     "type": "input-text"
@@ -357,7 +362,7 @@ var record_curd = {
                                 {
                                     "type": "select",
                                     "name": "labels",
-                                    "required": true,
+                                    // "required": true,
                                     "multiple": true,
                                     "clearable": true,
                                     "autoComplete": {

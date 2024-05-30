@@ -146,7 +146,7 @@ pub async fn post_records(req: Req<Value, PageReq<RecordVO>>) -> Option<PageRes<
         {
             let rq = qe.clone();
             let quote = rq.quote.unwrap();
-            if qe_map.contains_key(&quote) {
+            if !qe_map.contains_key(&quote) {
                 qe_map.insert(quote.clone(), Vec::new());
             }
             qe_map
@@ -160,7 +160,7 @@ pub async fn post_records(req: Req<Value, PageReq<RecordVO>>) -> Option<PageRes<
         {
             let rq = re.clone();
             let referenced = rq.referenced.unwrap();
-            if re_map.contains_key(&referenced) {
+            if !re_map.contains_key(&referenced) {
                 re_map.insert(referenced.clone(), Vec::new());
             }
             re_map
@@ -174,7 +174,7 @@ pub async fn post_records(req: Req<Value, PageReq<RecordVO>>) -> Option<PageRes<
         {
             let rl = rl.clone();
             let record = rl.record.unwrap();
-            if rl_map.contains_key(&record) {
+            if !rl_map.contains_key(&record) {
                 rl_map.insert(record.clone(), Vec::new());
             }
             rl_map
@@ -226,11 +226,11 @@ pub async fn post_labels(req: Req<Value, String>) -> Option<Vec<String>> {
         let lock = DB.get().unwrap().lock().await.to_owned();
         labels = Label::likes(&lock, req.bodys.clone()).await;
     }
-    let mut res = labels.unwrap_or_default();
+    let mut res: HashSet<String> = labels.unwrap_or_default().into_iter().collect();
     if req.bodys.is_some() && !req.bodys.clone().unwrap().trim().is_empty() {
-        res.push(req.bodys.unwrap().trim().to_string());
+        res.insert(req.bodys.unwrap().trim().to_string());
     }
-    Some(res)
+    Some(res.into_iter().collect())
 }
 
 #[tauri::command]
@@ -272,6 +272,7 @@ pub async fn post_record(req: Req<Value, RecordVO>) -> Result<(), &'static str> 
                 .collect();
         let not_in_labels: Vec<String> = bodys
             .labels
+            .clone()
             .unwrap()
             .into_iter()
             .filter(|v| !in_labels.contains(v))
@@ -280,20 +281,17 @@ pub async fn post_record(req: Req<Value, RecordVO>) -> Result<(), &'static str> 
             error!("adds {}", e);
             return Err("标签添加失败!");
         }
-        if let Err(e) = RecordLabels::add_record_labels(
-            &lock,
-            Some(bodys.id.clone().unwrap()),
-            Some(not_in_labels),
-        )
-        .await
+        if let Err(e) =
+            RecordLabels::add_record_labels(&lock, Some(bodys.id.clone().unwrap()), bodys.labels)
+                .await
         {
             error!("add_record_labels {}", e);
             return Err("标签引用关系添加失败!");
         }
-        let reg = Regex::new(r"#R{\.+?}").unwrap();
+        let reg = Regex::new(r"#R\{(.+?)\}").unwrap();
         let mut quotes = HashSet::new();
-        for mat in reg.find_iter(&bodys.content.clone().unwrap()) {
-            quotes.insert(mat.as_str().to_string());
+        for cap in reg.captures_iter(&bodys.content.clone().unwrap()) {
+            quotes.insert(cap.get(1).unwrap().as_str().to_string());
         }
         if let Err(e) = RecordQuote::add_record_quotes(
             &lock,
