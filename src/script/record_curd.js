@@ -71,46 +71,187 @@ var record_curd = {
                     "type": "each",
                     "name": "labels",
                     "label": "标签组",
+                    "searchable": {
+                        "type": "select",
+                        "name": "labels",
+                        // "required": true,
+                        "multiple": true,
+                        "clearable": true,
+                        "autoComplete": {
+                            "method": "post",
+                            "url": "/labels",
+                            "requestAdaptor": (r, c) => {
+                                console.log(r);
+                                console.log(c);
+                                return {
+                                    ...r,
+                                    data: "\"" + c.term + "\""
+                                };
+                            }
+                        },
+                        "label": "标签组"
+                    },
                     "items": {
-                        "type": "tag",
-                        "value": "${item}",
-                        "color": "processing"
+                        "type": "wrapper",
+                        "body": {
+                            "type": "tag",
+                            "value": "${item}",
+                            "color": "processing",
+                            "onEvent": {
+                                "click": {
+                                    "actions": [
+                                        {
+                                            "actionType": "copy",
+                                            "args": {
+                                                "content": "${item}"
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        },
                     },
                     "id": "u:cf20988feb18"
                 },
                 {
-                    "type": "text",
+                    "type": "each",
                     "name": "quotes",
                     "label": "引用情况",
                     "toggled": false,
+                    "items": {
+                        "type": "wrapper",
+                        "body": {
+                            "type": "tag",
+                            "value": "${item}",
+                            "color": "processing",
+                            "onEvent": {
+                                "click": {
+                                    "actions": [
+                                        {
+                                            "actionType": "copy",
+                                            "args": {
+                                                "content": "${item}"
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                    },
                     "searchable": {
-                        "type": "input-tag",
-                        "label": "引用",
-                        "placeholder": "请选择引用",
-                        "options": [
-                            "Aaron Rodgers",
-                            "Tom Brady",
-                            "Charlse Woodson",
-                            "Aaron Jones"
-                        ]
+                        "type": "select",
+                        description: "至多只显示前1000个数据",
+                        "name": "quotes",
+                        "multiple": true,
+                        "clearable": true,
+                        "autoComplete": {
+                            "method": "post",
+                            "url": "/records",
+                            adaptor: (payload, response, api, context) => {
+                                console.log(payload);
+                                console.log(response);
+                                console.log(api);
+                                console.log(context);
+                                let ids = [];
+                                payload.data.items.forEach(v => {
+                                    ids.push(v.id)
+                                });
+                                return {
+                                    ...payload,
+                                    status: payload.code === 200 ? 0 : payload.code,
+                                    data: ids
+                                }
+                            },
+                            "requestAdaptor": (r, c) => {
+                                console.log(r);
+                                console.log(c);
+                                return {
+                                    ...r,
+                                    data: {
+                                        ...r.data,
+                                        "page": 1,
+                                        "per_page": 1000,
+                                        "order_by": c.orderBy,
+                                        "order_dir": c.orderDir,
+                                        "data": {
+                                            "id": c.value,
+                                        },
+                                    }
+                                };
+                            }
+                        },
+                        "label": "记录id检索"
                     },
                     "id": "u:18d01b7aee38"
                 },
                 {
-                    "type": "text",
+                    "type": "each",
                     "label": "被引用情况",
                     "name": "referenceds",
                     "toggled": false,
+                    "items": {
+                        "type": "wrapper",
+                        "body": {
+                            "type": "tag",
+                            "value": "${item}",
+                            "color": "processing",
+                            "onEvent": {
+                                "click": {
+                                    "actions": [
+                                        {
+                                            "actionType": "copy",
+                                            "args": {
+                                                "content": "${item}"
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                    },
                     "searchable": {
-                        "type": "input-tag",
-                        "label": "引用",
-                        "placeholder": "请选择引用",
-                        "options": [
-                            "Aaron Rodgers",
-                            "Tom Brady",
-                            "Charlse Woodson",
-                            "Aaron Jones"
-                        ]
+                        "type": "select",
+                        description: "至多只显示前1000个数据",
+                        "name": "referenceds",
+                        "multiple": true,
+                        "clearable": true,
+                        "autoComplete": {
+                            "method": "post",
+                            "url": "/records",
+                            adaptor: (payload, response, api, context) => {
+                                console.log(payload);
+                                console.log(response);
+                                console.log(api);
+                                console.log(context);
+                                let ids = [];
+                                payload.data.items.forEach(v => {
+                                    ids.push(v.id)
+                                });
+                                return {
+                                    ...payload,
+                                    status: payload.code === 200 ? 0 : payload.code,
+                                    data: ids
+                                }
+                            },
+                            "requestAdaptor": (r, c) => {
+                                console.log(r);
+                                console.log(c);
+                                return {
+                                    ...r,
+                                    data: {
+                                        ...r.data,
+                                        "page": 1,
+                                        "per_page": 1000,
+                                        "order_by": c.orderBy,
+                                        "order_dir": c.orderDir,
+                                        "data": {
+                                            "id": c.value,
+                                        },
+                                    }
+                                };
+                            }
+                        },
+                        "label": "记录id检索"
                     },
                     "id": "u:d61bb65cff32"
                 },

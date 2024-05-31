@@ -78,8 +78,13 @@ if id != null && id != '':
     ` and id like '%'||#{id}||'%'`
 if content != null && content != '':
     ` and content like '%'||#{content}||'%'`
-if record_ids != null && record_ids.len != 0:
-    ` and id in #{record_ids}`
+if record_ids != null && !record_ids.is_empty() :
+    ` and id in ( `
+    for key,item in record_ids:
+        if key != 0:
+            `,`
+        ` #{item} `
+    ` ) `
 if create_time_limit != null:
     if create_time_limit.start_time != null:
         ` and create_time >= #{create_time_limit.start_time}`

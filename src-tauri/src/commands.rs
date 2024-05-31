@@ -52,7 +52,7 @@ pub async fn get_default_config() -> clap::Cli {
 
 #[tauri::command]
 pub async fn post_records(req: Req<Value, PageReq<RecordVO>>) -> Option<PageRes<RecordVO>> {
-    info!("req => {:?}", req);
+    info!("post_records => {:#?}", req);
     let bodys = req.bodys.unwrap();
     let (mut get_id, mut get_content) = (None, None);
     if bodys.data.is_some() {
@@ -107,12 +107,13 @@ pub async fn post_records(req: Req<Value, PageReq<RecordVO>>) -> Option<PageRes<
                 irs = true;
             }
         }
+        info!("record_set => {:#?}", record_set);
         let record_list: Vec<String> = record_set.into_iter().collect();
         let mut record_ids = None;
         if record_list.len() != 0 {
             record_ids = Some(record_list);
         }
-        info!("record_ids => {} {:?}", irs, &record_ids);
+        info!("record_ids => {} {:#?}", irs, &record_ids);
         if irs && record_ids.is_none() {
             select_page = Some(Page::new(0, 0))
         } else {
