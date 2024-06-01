@@ -260,3 +260,13 @@ technology:
   2. 不用父子标签定义
 
 图不区分引用还是标签,都放一起反正都是连接相关的规则
+
+引用格式 #R{引用id}
+
+文件标准格式
+图片的 ![#RF{文件路径}](/本地路径)
+文件的 [#RF{文件路径}](/本地路径)
+例如
+[#RF{D:/git/myrecord/src/script/record_curd.js}](/D:/git/myrecord/src/script/record_curd.js)
+
+文件支持在记录列表中可以直接点击打开,如果是文件就按文件打开,是文件夹就按文件夹打开.
