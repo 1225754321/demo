@@ -84,25 +84,44 @@ pub async fn post_records(req: Req<Value, PageReq<RecordVO>>) -> Option<PageRes<
                 irs = true;
             }
             if data.referenceds.is_some() && data.referenceds.clone().unwrap().len() != 0 {
-                for rq in RecordQuote::select_in_column(
+                let temp: Vec<String> = RecordQuote::select_in_column(
                     &lock.to_owned(),
                     "quote",
                     &data.referenceds.unwrap(),
                 )
                 .await
                 .unwrap()
-                {
-                    record_set.insert(rq.referenced.unwrap());
+                .into_iter()
+                .map(|v| v.referenced.unwrap())
+                .collect();
+                if irs {
+                    record_set = record_set
+                        .into_iter()
+                        .filter(|v| temp.contains(v))
+                        .collect();
+                } else {
+                    record_set.extend(temp);
                 }
                 irs = true;
             }
             if data.labels.is_some() && data.labels.clone().unwrap().len() != 0 {
-                for rl in
-                    RecordLabels::select_in_column(&lock.to_owned(), "label", &data.labels.unwrap())
-                        .await
-                        .unwrap()
-                {
-                    record_set.insert(rl.record.unwrap());
+                let temp: Vec<String> = RecordLabels::select_in_column(
+                    &lock.to_owned(),
+                    "label",
+                    &data.labels.unwrap(),
+                )
+                .await
+                .unwrap()
+                .into_iter()
+                .map(|v| v.record.unwrap())
+                .collect();
+                if irs {
+                    record_set = record_set
+                        .into_iter()
+                        .filter(|v| temp.contains(v))
+                        .collect();
+                } else {
+                    record_set.extend(temp);
                 }
                 irs = true;
             }
