@@ -37,6 +37,7 @@ async fn main() {
             commands::post_records,
             commands::post_record,
             commands::post_labels,
+            commands::post_upload,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

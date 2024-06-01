@@ -45,66 +45,6 @@
                 title: '表单页面',
                 body: [
                     record_curd,
-                    // {
-                    //     type: 'form',
-                    //     mode: 'horizontal',
-                    //     api: '/saveFormerr?cc=sdfdsf',
-                    //     body: [
-                    //         {
-                    //             label: 'Name',
-                    //             type: 'input-text',
-                    //             name: 'name'
-                    //         },
-                    //         {
-                    //             label: 'Email',
-                    //             type: 'input-text',
-                    //             name: 'email'
-                    //         }
-                    //     ]
-                    // },
-                    // {
-                    //     "type": "page",
-                    //     "body": {
-                    //         "type": "chart",
-                    //         "api": "/amis/api/mock2/chart/chartData",
-                    //         "config": {
-                    //             tooltip: {},
-                    //             legend: [
-                    //                 {
-                    //                     data: "${ARRAYMAP(categories, item => item.name)}"
-                    //                 }
-                    //             ],
-                    //             series: [
-                    //                 {
-                    //                     name: 'Les Miserables',
-                    //                     type: 'graph',
-                    //                     layout: 'none',
-                    //                     data: "${nodes}",
-                    //                     links: "${links}",
-                    //                     categories: "${categories}",
-                    //                     roam: true,
-                    //                     label: {
-                    //                         show: true,
-                    //                         position: 'right',
-                    //                         formatter: '{b}',
-                    //                         color: "inherit"
-                    //                     },
-                    //                     labelLayout: {
-                    //                         hideOverlap: true
-                    //                     },
-                    //                     scaleLimit: {
-                    //                         min: 0.4,
-                    //                         max: 2
-                    //                     },
-                    //                     lineStyle: {
-                    //                         color: 'source',
-                    //                         curveness: 0.3
-                    //                     },
-                    //                 }
-                    //             ]
-                    //         }
-                    //     }
-                    // }
                 ]
             };
             let amisScoped = amis.embed('#root', amisJSON);

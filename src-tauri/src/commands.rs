@@ -8,7 +8,7 @@ use log::{error, info};
 use rbatis::{rbdc::DateTime, Page, PageRequest};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{Map, Value};
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct Req<P: Serialize + Clone, B: Serialize + Clone> {
@@ -340,4 +340,12 @@ pub async fn post_record(req: Req<Value, RecordVO>) -> Result<(), &'static str> 
         lock.commit().await.unwrap_or_default();
     }
     Ok(())
+}
+
+#[tauri::command]
+pub async fn post_upload(req: Req<Value, Value>) -> Result<Value, &'static str> {
+    info!("upload => {:#?}", req);
+    let mut res = Map::new();
+    res.insert("value".to_string(), Value::String("test".to_string()));
+    Ok(Value::Object(res))
 }
